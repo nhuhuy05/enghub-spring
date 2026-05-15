@@ -2,9 +2,10 @@ package com.nhuhuy05.enghub.service;
 
 import com.nhuhuy05.enghub.dto.request.UserCreationRequest;
 import com.nhuhuy05.enghub.dto.request.UserUpdateRequest;
+import com.nhuhuy05.enghub.entity.Role;
 import com.nhuhuy05.enghub.dto.response.UserResponse;
 import com.nhuhuy05.enghub.entity.User;
-import com.nhuhuy05.enghub.enums.Role;
+import com.nhuhuy05.enghub.enums.SystemRole;
 import com.nhuhuy05.enghub.exception.AppException;
 import com.nhuhuy05.enghub.exception.ErrorCode;
 import com.nhuhuy05.enghub.mapper.UserMapper;
@@ -14,14 +15,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,11 +41,7 @@ public class UserService {
 
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        HashSet<String> roles = new HashSet<>();
-        roles.add(Role.STUDENT.name());
-
-        // user.setRoles(roles);
+        user.setRoles(Set.of(resolveOrCreateRole(SystemRole.STUDENT)));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -62,11 +60,25 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        boolean isOwner = user.getEmail().equals(auth.getName());
 
-        var roles = roleRepository.findAllById(request.getRoles());
-        user.setRoles(new HashSet<>(roles));
+        if (!isAdmin && !isOwner) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        userMapper.updateUser(user, request); // mapper nên ignore password
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        if (request.getRoles() != null) {
+            Set<String> roleNames = new HashSet<>(request.getRoles());
+            var roles = roleRepository.findByNameIn(roleNames);
+            user.setRoles(new HashSet<>(roles));
+        }
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -82,10 +94,22 @@ public class UserService {
                 .map(userMapper::toUserResponse).toList();
     }
 
-    @PostAuthorize("returnObject.email == authentication.name")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUser(String id){
         log.info("In method get user by Id");
-        return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userMapper.toUserResponse(user);
     }
+
+    private Role resolveOrCreateRole(SystemRole roleName) {
+        return roleRepository.findByName(roleName.name())
+                .orElseGet(() -> roleRepository.save(
+                        Role.builder()
+                                .name(roleName.name())
+                                .description(roleName.name())
+                                .build()
+                ));
+    }
+
 }

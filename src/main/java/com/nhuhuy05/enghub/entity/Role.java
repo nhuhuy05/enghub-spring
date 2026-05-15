@@ -1,8 +1,14 @@
 package com.nhuhuy05.enghub.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,11 +21,21 @@ import java.util.Set;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "roles")
 public class Role {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    String id;
+
+    @Column(nullable = false, unique = true)
     String name;
     String description;
 
     @ManyToMany
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
     Set<Permission> permissions;
 }
