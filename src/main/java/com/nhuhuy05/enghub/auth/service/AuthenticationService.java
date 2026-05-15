@@ -60,8 +60,12 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request){
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        var user = userRepository.findByEmail(request.getEmail())
+        var user = userRepository.findWithRolesByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(),
                 user.getPassword());
