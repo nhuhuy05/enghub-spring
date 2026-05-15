@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Set;
 
 @Repository
-public interface PermissionRepository extends JpaRepository<Permission, String> {
+public interface PermissionRepository extends JpaRepository<Permission, Long> {
     Set<Permission> findByNameIn(Set<String> names);
     void deleteByName(String name);
 }

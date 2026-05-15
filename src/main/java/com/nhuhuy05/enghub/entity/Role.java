@@ -24,8 +24,8 @@ import java.util.Set;
 @Table(name = "roles")
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
     @Column(nullable = false, unique = true)
     String name;

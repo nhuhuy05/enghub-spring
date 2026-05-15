@@ -12,7 +12,7 @@ import java.util.Set;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    String id;
+    Long id;
     String email;
     String fullName;
     String phone;
