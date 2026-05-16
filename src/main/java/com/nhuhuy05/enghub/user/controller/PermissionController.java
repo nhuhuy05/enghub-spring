@@ -4,6 +4,7 @@ import com.nhuhuy05.enghub.common.response.ApiResponse;
 import com.nhuhuy05.enghub.user.dto.PermissionRequest;
 import com.nhuhuy05.enghub.user.dto.PermissionResponse;
 import com.nhuhuy05.enghub.user.service.PermissionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/permissions")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j

@@ -4,6 +4,7 @@ import com.nhuhuy05.enghub.common.response.ApiResponse;
 import com.nhuhuy05.enghub.user.dto.RoleRequest;
 import com.nhuhuy05.enghub.user.dto.RoleResponse;
 import com.nhuhuy05.enghub.user.service.RoleService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/roles")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j

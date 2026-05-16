@@ -6,6 +6,7 @@ import com.nhuhuy05.enghub.test.dto.SaveAnswerRequest;
 import com.nhuhuy05.enghub.test.dto.StartAttemptRequest;
 import com.nhuhuy05.enghub.test.dto.UserAnswerResponse;
 import com.nhuhuy05.enghub.test.service.TestAttemptService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/attempts")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TestAttemptController {

@@ -5,6 +5,8 @@ import com.nhuhuy05.enghub.user.dto.UserCreationRequest;
 import com.nhuhuy05.enghub.user.dto.UserUpdateRequest;
 import com.nhuhuy05.enghub.user.dto.UserResponse;
 import com.nhuhuy05.enghub.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class UserController {
     }
 
     @GetMapping
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<UserResponse>> getUsers(){
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -43,6 +46,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<UserResponse> getUser(@PathVariable("userId") Long userId){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getUser(userId))
@@ -50,6 +54,7 @@ public class UserController {
     }
 
     @GetMapping("/myInfo")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<UserResponse> getMyInfo(){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
@@ -57,6 +62,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<String> deleteUser(@PathVariable Long userId){
         userService.deleteUser(userId);
         return ApiResponse.<String>builder()
@@ -65,6 +71,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<UserResponse> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.updateUser(userId, request))
