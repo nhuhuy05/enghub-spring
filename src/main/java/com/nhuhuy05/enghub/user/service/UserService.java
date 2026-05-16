@@ -89,14 +89,12 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers(){
-        log.info("In method get Users");
         return userRepository.findAll().stream()
                 .map(userMapper::toUserResponse).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUser(Long id){
-        log.info("In method get user by Id");
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userMapper.toUserResponse(user);

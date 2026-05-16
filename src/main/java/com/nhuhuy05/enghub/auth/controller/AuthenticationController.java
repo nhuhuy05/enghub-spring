@@ -5,7 +5,10 @@ import com.nhuhuy05.enghub.auth.dto.AuthenticationRequest;
 import com.nhuhuy05.enghub.auth.dto.IntrospectRequest;
 import com.nhuhuy05.enghub.auth.dto.AuthenticationResponse;
 import com.nhuhuy05.enghub.auth.dto.IntrospectResponse;
+import com.nhuhuy05.enghub.auth.dto.LogoutRequest;
 import com.nhuhuy05.enghub.auth.service.AuthenticationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.nimbusds.jose.JOSEException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,15 @@ public class AuthenticationController {
         var result = authenticationService.introspect(request);
         return ApiResponse.<IntrospectResponse>builder()
                 .result(result)
+                .build();
+    }
+
+    @PostMapping("/logout")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<String> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
+        authenticationService.logout(request);
+        return ApiResponse.<String>builder()
+                .result("You have logged out")
                 .build();
     }
 }
