@@ -26,12 +26,21 @@ public class UserAnswer {
     @JoinColumn(name = "attempt_id", nullable = false)
     TestAttempt attempt;
 
+    @Column(name = "question_id", nullable = false)
+    Long questionId;
+
+    @Column(name = "selected_answer_id")
+    Long selectedAnswerId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "question_id", nullable = false)
+    @JoinColumn(name = "question_id", nullable = false, insertable = false, updatable = false)
     Question question;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "selected_answer_id")
+    @JoinColumns({
+            @JoinColumn(name = "selected_answer_id", referencedColumnName = "id", insertable = false, updatable = false),
+            @JoinColumn(name = "question_id", referencedColumnName = "question_id", insertable = false, updatable = false)
+    })
     Answer selectedAnswer;
 
     @Column(name = "is_correct", nullable = false)
