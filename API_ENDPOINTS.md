@@ -14,13 +14,22 @@ All responses are wrapped by:
 }
 ```
 
-## Authentication
+## Authentication (for FE)
+
+### FE flow de xuat
+
+1. User login bang email/password qua `POST /auth/token`.
+2. Lay `token` tu `result` va luu (uu tien memory hoac secure storage).
+3. Goi API protected voi header `Authorization: Bearer <token>`.
+4. Khi app reload hoac truoc action quan trong, co the validate token bang `POST /auth/introspect`.
+5. Neu API tra unauthorized/forbidden, FE clear session va dieu huong ve man login.
 
 ### 1) Login
 
 - Method: `POST`
 - Path: `/auth/token`
 - Auth: Public
+- Content-Type: `application/json`
 
 Request body:
 
@@ -31,11 +40,25 @@ Request body:
 }
 ```
 
+Response (example):
+
+```json
+{
+  "code": 1000,
+  "message": "success",
+  "result": {
+    "token": "<jwt-token>",
+    "authenticated": true
+  }
+}
+```
+
 ### 2) Introspect token
 
 - Method: `POST`
 - Path: `/auth/introspect`
 - Auth: Public
+- Content-Type: `application/json`
 
 Request body:
 
@@ -45,13 +68,66 @@ Request body:
 }
 ```
 
-## Users
+Response (example):
 
-### 3) Create user
+```json
+{
+  "code": 1000,
+  "message": "success",
+  "result": {
+    "valid": true
+  }
+}
+```
+
+### 3) Logout
+
+- Method: `POST`
+- Path: `/auth/logout`
+- Auth: Bearer JWT
+- Content-Type: `application/json`
+
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+Request body:
+
+```json
+{
+  "token": "<jwt-token>"
+}
+```
+
+## Users (for FE)
+
+### User object FE thuong dung
+
+```json
+{
+  "id": 1,
+  "email": "student1@gmail.com",
+  "fullName": "Student 1",
+  "phone": "0900000000",
+  "avatarUrl": "https://example.com/avatar.png",
+  "roles": [
+    {
+      "name": "STUDENT",
+      "description": "STUDENT",
+      "permissions": []
+    }
+  ]
+}
+```
+
+### 4) Create user (register)
 
 - Method: `POST`
 - Path: `/users`
 - Auth: Public
+- Content-Type: `application/json`
 
 Request body:
 
@@ -65,31 +141,57 @@ Request body:
 }
 ```
 
-### 4) Get all users
+### 5) Get all users (admin)
 
 - Method: `GET`
 - Path: `/users`
 - Auth: Bearer JWT
 - Authorization: `hasRole('ADMIN')`
 
-### 5) Get user by ID
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+### 6) Get user by ID (admin)
 
 - Method: `GET`
 - Path: `/users/{userId}`
 - Auth: Bearer JWT
-- Authorization: Post-check `returnObject.email == authentication.name`
+- Authorization: `hasRole('ADMIN')`
 
-### 6) Get my info
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+### 7) Get my info
 
 - Method: `GET`
 - Path: `/users/myInfo`
 - Auth: Bearer JWT
 
-### 7) Update user
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+### 8) Update user
 
 - Method: `PUT`
 - Path: `/users/{userId}`
 - Auth: Bearer JWT
+- Authorization: `ADMIN` hoac chinh user do (owner)
+- Content-Type: `application/json`
+
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
 
 Request body:
 
@@ -103,15 +205,21 @@ Request body:
 }
 ```
 
-### 8) Delete user
+### 9) Delete user
 
 - Method: `DELETE`
 - Path: `/users/{userId}`
 - Auth: Bearer JWT
 
+Headers:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
 ## Roles
 
-### 9) Create role
+### 10) Create role
 
 - Method: `POST`
 - Path: `/roles`
@@ -127,13 +235,13 @@ Request body:
 }
 ```
 
-### 10) Get all roles
+### 11) Get all roles
 
 - Method: `GET`
 - Path: `/roles`
 - Auth: Bearer JWT
 
-### 11) Delete role
+### 12) Delete role
 
 - Method: `DELETE`
 - Path: `/roles/{role}`
@@ -142,7 +250,7 @@ Request body:
 
 ## Permissions
 
-### 12) Create permission
+### 13) Create permission
 
 - Method: `POST`
 - Path: `/permissions`
@@ -157,13 +265,13 @@ Request body:
 }
 ```
 
-### 13) Get all permissions
+### 14) Get all permissions
 
 - Method: `GET`
 - Path: `/permissions`
 - Auth: Bearer JWT
 
-### 14) Delete permission
+### 15) Delete permission
 
 - Method: `DELETE`
 - Path: `/permissions/{permission}`
@@ -177,6 +285,5 @@ Public endpoints (`POST` only):
 - `/users`
 - `/auth/token`
 - `/auth/introspect`
-- `/auth/logout` (present in security config)
 
 All other endpoints require Bearer JWT.
