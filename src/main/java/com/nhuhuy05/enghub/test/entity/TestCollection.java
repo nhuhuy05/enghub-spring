@@ -14,45 +14,28 @@ import java.util.Set;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "tests")
-public class Test {
+@Table(
+        name = "test_collections",
+        uniqueConstraints = @UniqueConstraint(name = "uq_test_collections_name", columnNames = "name")
+)
+public class TestCollection {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @Column(nullable = false, length = 255)
-    String title;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id")
-    TestCollection collection;
-
-    @Column(name = "test_number")
-    Integer testNumber;
+    String name;
 
     String description;
-
-    @Column(name = "total_questions", nullable = false)
-    Integer totalQuestions;
-
-    @Column(name = "duration_minutes", nullable = false)
-    Integer durationMinutes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt;
 
-    @Column(name = "is_published", nullable = false)
-    @Builder.Default
-    Boolean published = false;
-
-    @OneToMany(mappedBy = "test", fetch = FetchType.LAZY)
-    Set<TestPart> parts;
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    Set<Test> tests;
 
     @PrePersist
     void prePersist() {
-        if (published == null) {
-            published = false;
-        }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }

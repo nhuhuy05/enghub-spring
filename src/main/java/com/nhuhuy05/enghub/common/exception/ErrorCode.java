@@ -21,6 +21,20 @@ public enum ErrorCode {
     ATTEMPT_NOT_EXISTED(1012, "Attempt not existed", HttpStatus.NOT_FOUND),
     ATTEMPT_INVALID_STATE(1013, "Attempt is not in valid state", HttpStatus.BAD_REQUEST),
     ANSWER_NOT_BELONG_TO_QUESTION(1014, "Selected answer does not belong to question", HttpStatus.BAD_REQUEST),
+    TEST_COLLECTION_NOT_EXISTED(1015, "Test collection not existed", HttpStatus.NOT_FOUND),
+    TEST_COLLECTION_EXISTED(1016, "Test collection existed", HttpStatus.BAD_REQUEST),
+    TEST_NUMBER_EXISTED(1017, "Test number existed in collection", HttpStatus.BAD_REQUEST),
+    INVALID_TEST_COLLECTION_NUMBER(1018, "Collection and test number must be provided together", HttpStatus.BAD_REQUEST),
+    MEDIA_ASSET_EXISTED(1019, "Media asset existed", HttpStatus.BAD_REQUEST),
+    INVALID_MEDIA_TYPE(1020, "Media type is invalid", HttpStatus.BAD_REQUEST),
+    CLOUDINARY_UPLOAD_FAILED(1021, "Cloudinary upload failed", HttpStatus.BAD_REQUEST),
+    TEST_ALREADY_IMPORTED(1022, "Test already has imported questions", HttpStatus.BAD_REQUEST),
+    QUESTION_GROUP_NOT_EXISTED(1023, "Question group not existed", HttpStatus.NOT_FOUND),
+    MEDIA_ASSET_NOT_EXISTED(1024, "Media asset not existed", HttpStatus.NOT_FOUND),
+    TEST_HAS_ATTEMPTS(1025, "Test already has attempts", HttpStatus.BAD_REQUEST),
+    PASSAGE_NOT_EXISTED(1026, "Passage not existed", HttpStatus.NOT_FOUND),
+    FILE_TOO_LARGE(1027, "Uploaded file is too large", HttpStatus.PAYLOAD_TOO_LARGE),
+    MEDIA_ASSET_IN_USE(1028, "Media asset is being used", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

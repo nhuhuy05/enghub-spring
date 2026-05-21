@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.nhuhuy05.enghub.config.DotenvEnvironmentPostProcessor
