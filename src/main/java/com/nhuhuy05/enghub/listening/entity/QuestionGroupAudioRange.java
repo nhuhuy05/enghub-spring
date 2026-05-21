@@ -1,5 +1,6 @@
 package com.nhuhuy05.enghub.listening.entity;
 
+import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,8 +27,8 @@ public class QuestionGroupAudioRange {
     QuestionGroup questionGroup;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "audio_file_id", nullable = false)
-    AudioFile audioFile;
+    @JoinColumn(name = "media_asset_id", nullable = false)
+    MediaAsset mediaAsset;
 
     @Column(name = "start_ms", nullable = false)
     Integer startMs;
@@ -38,4 +39,3 @@ public class QuestionGroupAudioRange {
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;
 }
-

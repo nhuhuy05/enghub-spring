@@ -47,8 +47,6 @@ public class TestAttemptService {
                 .mode(mode)
                 .status(AttemptStatus.IN_PROGRESS)
                 .startedAt(LocalDateTime.now())
-                .correctCount(0)
-                .totalQuestions(test.getTotalQuestions())
                 .build();
 
         return toAttemptResponse(testAttemptRepository.save(attempt));
@@ -94,11 +92,6 @@ public class TestAttemptService {
             throw new AppException(ErrorCode.ATTEMPT_INVALID_STATE);
         }
 
-        List<UserAnswer> answers = userAnswerRepository.findAllByAttemptId(attemptId);
-        int correctCount = (int) answers.stream().filter(UserAnswer::isCorrect).count();
-
-        attempt.setCorrectCount(correctCount);
-        attempt.setTotalQuestions(attempt.getTest().getTotalQuestions());
         attempt.setStatus(AttemptStatus.SUBMITTED);
         attempt.setSubmittedAt(LocalDateTime.now());
 
@@ -106,13 +99,16 @@ public class TestAttemptService {
     }
 
     private AttemptResponse toAttemptResponse(TestAttempt attempt) {
+        List<UserAnswer> answers = userAnswerRepository.findAllByAttemptId(attempt.getId());
+        int correctCount = (int) answers.stream().filter(UserAnswer::isCorrect).count();
+
         return AttemptResponse.builder()
                 .id(attempt.getId())
                 .testId(attempt.getTest().getId())
                 .mode(attempt.getMode())
                 .status(attempt.getStatus())
-                .correctCount(attempt.getCorrectCount())
-                .totalQuestions(attempt.getTotalQuestions())
+                .correctCount(correctCount)
+                .totalQuestions(attempt.getTest().getTotalQuestions())
                 .totalScore(attempt.getTotalScore())
                 .readingScore(attempt.getReadingScore())
                 .listeningScore(attempt.getListeningScore())

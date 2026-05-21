@@ -32,9 +32,6 @@ public class Question {
     @Column(name = "question_text")
     String questionText;
 
-    @Column(name = "image_url", length = 500)
-    String imageUrl;
-
     String explanation;
 
     @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)

@@ -1,5 +1,6 @@
 package com.nhuhuy05.enghub.reading.entity;
 
+import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,10 +44,10 @@ public class Passage {
     @Column(name = "vocab_hints")
     String vocabHints;
 
-    @Column(name = "image_url", length = 500)
-    String imageUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "media_asset_id")
+    MediaAsset mediaAsset;
 
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;
 }
-

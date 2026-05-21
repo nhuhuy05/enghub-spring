@@ -34,6 +34,20 @@ public class Test {
     @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt;
 
+    @Column(name = "is_published", nullable = false)
+    @Builder.Default
+    Boolean published = false;
+
     @OneToMany(mappedBy = "test", fetch = FetchType.LAZY)
     Set<TestPart> parts;
+
+    @PrePersist
+    void prePersist() {
+        if (published == null) {
+            published = false;
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

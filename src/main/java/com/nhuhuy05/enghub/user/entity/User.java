@@ -50,6 +50,10 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     LocalDateTime createdAt;
 
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    Boolean active = true;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
@@ -57,6 +61,13 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     Set<Role> roles;
+
+    @PrePersist
+    void prePersist() {
+        if (active == null) {
+            active = true;
+        }
+    }
 }
 
 

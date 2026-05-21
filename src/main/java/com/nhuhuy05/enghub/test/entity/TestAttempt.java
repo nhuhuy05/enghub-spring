@@ -54,12 +54,6 @@ public class TestAttempt {
     @Column(name = "total_score")
     Integer totalScore;
 
-    @Column(name = "correct_count", nullable = false)
-    Integer correctCount;
-
-    @Column(name = "total_questions", nullable = false)
-    Integer totalQuestions;
-
     @Column(name = "duration_seconds")
     Integer durationSeconds;
 

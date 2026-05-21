@@ -44,7 +44,9 @@ public class UserVocabularyProgress {
     @Column(name = "review_count", nullable = false)
     Integer reviewCount;
 
+    @Column(name = "interval_days", nullable = false)
+    Integer intervalDays;
+
     @Column(name = "ease_factor", nullable = false, precision = 4, scale = 2)
     BigDecimal easeFactor;
 }
-

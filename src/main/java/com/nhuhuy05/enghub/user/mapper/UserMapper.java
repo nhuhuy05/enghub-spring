@@ -14,6 +14,7 @@ public interface UserMapper {
     @Mapping(target = "provider", ignore = true)
     @Mapping(target = "providerId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "active", constant = "true")
     @Mapping(target = "roles", ignore = true)
     User toUser(UserCreationRequest request);
 
@@ -25,6 +26,7 @@ public interface UserMapper {
     @Mapping(target = "provider", ignore = true)
     @Mapping(target = "providerId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "active", ignore = true)
     @Mapping(target = "roles", ignore = true)
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 }
