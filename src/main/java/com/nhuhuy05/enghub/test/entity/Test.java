@@ -45,6 +45,10 @@ public class Test {
     @Builder.Default
     Boolean published = false;
 
+    @Column(name = "workflow_status", nullable = false, length = 50)
+    @Builder.Default
+    String workflowStatus = "draft";
+
     @OneToMany(mappedBy = "test", fetch = FetchType.LAZY)
     Set<TestPart> parts;
 
@@ -52,6 +56,9 @@ public class Test {
     void prePersist() {
         if (published == null) {
             published = false;
+        }
+        if (workflowStatus == null) {
+            workflowStatus = "draft";
         }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();

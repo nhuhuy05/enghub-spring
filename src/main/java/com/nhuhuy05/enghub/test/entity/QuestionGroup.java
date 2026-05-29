@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -31,6 +32,23 @@ public class QuestionGroup {
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;
 
+    @Column(name = "review_status", nullable = false, length = 50)
+    @Builder.Default
+    String reviewStatus = "needs_review";
+
+    @Column(name = "reviewed_at")
+    LocalDateTime reviewedAt;
+
+    @Column(name = "reviewed_by")
+    Long reviewedBy;
+
     @OneToMany(mappedBy = "questionGroup", fetch = FetchType.LAZY)
     Set<Question> questions;
+
+    @PrePersist
+    void prePersist() {
+        if (reviewStatus == null) {
+            reviewStatus = "needs_review";
+        }
+    }
 }

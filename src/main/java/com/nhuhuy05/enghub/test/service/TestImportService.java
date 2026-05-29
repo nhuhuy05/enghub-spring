@@ -135,6 +135,10 @@ public class TestImportService {
         }
         Map<GroupKey, QuestionGroupAudio> audiosByGroup = persistRows(testId, rows);
         persistTranscripts(audiosByGroup, transcriptRows, transcriptLineRows);
+        testRepository.findById(testId).ifPresent(test -> {
+            test.setWorkflowStatus("reviewing");
+            testRepository.save(test);
+        });
 
         return TestImportResponse.builder()
                 .success(true)
@@ -201,7 +205,6 @@ public class TestImportService {
             }
 
             transcriptRows.addAll(parseTranscriptSheet(workbook, formatter, errors));
-            transcriptLineRows.addAll(parseTranscriptLineSheet(workbook, formatter, errors));
         } catch (IOException | RuntimeException exception) {
             errors.add(error(1, "file", "Excel file could not be read"));
         }

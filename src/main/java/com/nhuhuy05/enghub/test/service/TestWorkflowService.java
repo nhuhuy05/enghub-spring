@@ -68,6 +68,7 @@ public class TestWorkflowService {
         }
 
         test.setPublished(true);
+        test.setWorkflowStatus("published");
         testRepository.save(test);
 
         return PublishResponse.builder()
@@ -106,6 +107,7 @@ public class TestWorkflowService {
         long partOneMissingImageCount = questionGroupImageRepository.countPartOneGroupsWithoutImage(testId);
         long listeningMissingAudioRangeCount = questionGroupAudioRepository.countListeningGroupsWithoutValidAudioRange(testId);
         long readingMissingPassageCount = questionGroupPassageRepository.countReadingGroupsWithoutPassage(testId);
+        long notReviewedGroupCount = questionGroupRepository.countByTestPartTestIdAndReviewStatusNot(testId, "reviewed");
 
         List<String> errors = new ArrayList<>();
         if (questionCount != 200) {
@@ -119,6 +121,12 @@ public class TestWorkflowService {
         }
         if (listeningMissingAudioRangeCount > 0) {
             errors.add("Part 1-4 still has " + listeningMissingAudioRangeCount + " groups without a valid audio range");
+        }
+        if (readingMissingPassageCount > 0) {
+            errors.add("Part 6-7 still has " + readingMissingPassageCount + " groups without passage content");
+        }
+        if (notReviewedGroupCount > 0) {
+            errors.add(notReviewedGroupCount + " question groups have not been reviewed");
         }
 
         return TestPreviewResponse.builder()

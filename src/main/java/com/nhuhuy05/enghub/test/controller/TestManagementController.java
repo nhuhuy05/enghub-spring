@@ -6,11 +6,14 @@ import com.nhuhuy05.enghub.media.service.MediaAssetService;
 import com.nhuhuy05.enghub.test.dto.AudioRangeResponse;
 import com.nhuhuy05.enghub.test.dto.AudioRangeUpdateRequest;
 import com.nhuhuy05.enghub.test.dto.PublishResponse;
+import com.nhuhuy05.enghub.test.dto.QuestionGroupListItemResponse;
 import com.nhuhuy05.enghub.test.dto.TestCreationRequest;
 import com.nhuhuy05.enghub.test.dto.TestImportResponse;
 import com.nhuhuy05.enghub.test.dto.TestPartResponse;
 import com.nhuhuy05.enghub.test.dto.TestPreviewResponse;
+import com.nhuhuy05.enghub.test.dto.TestPreviewContentResponse;
 import com.nhuhuy05.enghub.test.dto.TestResponse;
+import com.nhuhuy05.enghub.test.service.QuestionGroupReviewService;
 import com.nhuhuy05.enghub.test.service.TestImportService;
 import com.nhuhuy05.enghub.test.service.TestManagementService;
 import com.nhuhuy05.enghub.test.service.TestWorkflowService;
@@ -34,6 +37,7 @@ public class TestManagementController {
     TestManagementService testManagementService;
     TestImportService testImportService;
     TestWorkflowService testWorkflowService;
+    QuestionGroupReviewService questionGroupReviewService;
     MediaAssetService mediaAssetService;
 
     @PostMapping
@@ -133,6 +137,24 @@ public class TestManagementController {
     ApiResponse<TestPreviewResponse> preview(@PathVariable Long testId) {
         return ApiResponse.<TestPreviewResponse>builder()
                 .result(testWorkflowService.preview(testId))
+                .build();
+    }
+
+    @GetMapping("/{testId}/preview-content")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<TestPreviewContentResponse> previewContent(@PathVariable Long testId) {
+        return ApiResponse.<TestPreviewContentResponse>builder()
+                .result(questionGroupReviewService.getPreviewContent(testId))
+                .build();
+    }
+
+    @GetMapping("/{testId}/question-groups")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<List<QuestionGroupListItemResponse>> getQuestionGroups(@PathVariable Long testId) {
+        return ApiResponse.<List<QuestionGroupListItemResponse>>builder()
+                .result(questionGroupReviewService.getQuestionGroups(testId))
                 .build();
     }
 

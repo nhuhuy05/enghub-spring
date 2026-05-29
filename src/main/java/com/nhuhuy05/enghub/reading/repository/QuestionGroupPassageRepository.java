@@ -4,10 +4,15 @@ import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface QuestionGroupPassageRepository extends JpaRepository<QuestionGroupPassage, Long> {
     Optional<QuestionGroupPassage> findByQuestionGroupIdAndOrderIndex(Long questionGroupId, Integer orderIndex);
+
+    List<QuestionGroupPassage> findAllByQuestionGroupIdOrderByOrderIndexAsc(Long questionGroupId);
+
+    void deleteAllByQuestionGroupId(Long questionGroupId);
 
     boolean existsByMediaAssetId(Long mediaAssetId);
 

@@ -16,4 +16,8 @@ public interface QuestionGroupRepository extends JpaRepository<QuestionGroup, Lo
     );
 
     List<QuestionGroup> findAllByTestPartTestId(Long testId);
+
+    List<QuestionGroup> findAllByTestPartTestIdOrderByTestPartPartNumberAscOrderIndexAsc(Long testId);
+
+    long countByTestPartTestIdAndReviewStatusNot(Long testId, String reviewStatus);
 }
