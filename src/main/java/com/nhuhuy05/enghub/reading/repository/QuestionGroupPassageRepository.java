@@ -1,13 +1,13 @@
 package com.nhuhuy05.enghub.reading.repository;
 
-import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
+import com.nhuhuy05.enghub.reading.entity.Passage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface QuestionGroupPassageRepository extends JpaRepository<QuestionGroupPassage, Long> {
-    Optional<QuestionGroupPassage> findByQuestionGroupIdAndOrderIndex(Long questionGroupId, Integer orderIndex);
+public interface PassageRepository extends JpaRepository<Passage, Long> {
+    Optional<Passage> findByQuestionGroupIdAndOrderIndex(Long questionGroupId, Integer orderIndex);
 
     boolean existsByMediaAssetId(Long mediaAssetId);
 
@@ -18,7 +18,7 @@ public interface QuestionGroupPassageRepository extends JpaRepository<QuestionGr
               and qg.testPart.partNumber in (6, 7)
               and not exists (
                   select 1
-                  from QuestionGroupPassage p
+                  from Passage p
                   where p.questionGroup = qg
               )
             """)

@@ -1,4 +1,6 @@
 package com.nhuhuy05.enghub.test.entity;
+
+import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,6 +29,10 @@ public class QuestionGroup {
 
     @Column(length = 255)
     String title;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "media_asset_id")
+    MediaAsset mediaAsset;
 
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;

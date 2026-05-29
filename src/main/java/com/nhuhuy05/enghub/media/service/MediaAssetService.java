@@ -5,13 +5,13 @@ import com.cloudinary.utils.ObjectUtils;
 import com.nhuhuy05.enghub.common.exception.AppException;
 import com.nhuhuy05.enghub.common.exception.ErrorCode;
 import com.nhuhuy05.enghub.config.CloudinaryProperties;
-import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRepository;
+import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRangeRepository;
 import com.nhuhuy05.enghub.media.dto.MediaAssetResponse;
 import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import com.nhuhuy05.enghub.media.repository.MediaAssetRepository;
-import com.nhuhuy05.enghub.reading.repository.QuestionGroupPassageRepository;
+import com.nhuhuy05.enghub.reading.repository.PassageRepository;
 import com.nhuhuy05.enghub.test.entity.Test;
-import com.nhuhuy05.enghub.test.repository.QuestionGroupImageRepository;
+import com.nhuhuy05.enghub.test.repository.QuestionGroupRepository;
 import com.nhuhuy05.enghub.test.repository.TestRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +34,9 @@ public class MediaAssetService {
     CloudinaryProperties cloudinaryProperties;
     MediaAssetRepository mediaAssetRepository;
     TestRepository testRepository;
-    QuestionGroupImageRepository questionGroupImageRepository;
-    QuestionGroupAudioRepository questionGroupAudioRepository;
-    QuestionGroupPassageRepository questionGroupPassageRepository;
+    QuestionGroupRepository questionGroupRepository;
+    QuestionGroupAudioRangeRepository questionGroupAudioRangeRepository;
+    PassageRepository passageRepository;
 
     @Transactional
     public MediaAssetResponse uploadMedia(Long testId, MultipartFile file, String label, String mediaType) {
@@ -98,9 +98,9 @@ public class MediaAssetService {
     }
 
     private void ensureMediaAssetNotInUse(Long mediaAssetId) {
-        if (questionGroupImageRepository.existsByMediaAssetId(mediaAssetId)
-                || questionGroupPassageRepository.existsByMediaAssetId(mediaAssetId)
-                || questionGroupAudioRepository.existsByMediaAssetId(mediaAssetId)) {
+        if (questionGroupRepository.existsByMediaAssetId(mediaAssetId)
+                || passageRepository.existsByMediaAssetId(mediaAssetId)
+                || questionGroupAudioRangeRepository.existsByMediaAssetId(mediaAssetId)) {
             throw new AppException(ErrorCode.MEDIA_ASSET_IN_USE);
         }
     }

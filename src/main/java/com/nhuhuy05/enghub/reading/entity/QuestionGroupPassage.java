@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
         name = "question_group_passages",
         uniqueConstraints = @UniqueConstraint(name = "uq_question_group_passages_order", columnNames = {"question_group_id", "order_index"})
 )
-public class QuestionGroupPassage {
+public class Passage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;

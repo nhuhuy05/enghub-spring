@@ -7,8 +7,8 @@ import com.nhuhuy05.enghub.media.repository.MediaAssetRepository;
 import com.nhuhuy05.enghub.reading.dto.PassageMediaRequest;
 import com.nhuhuy05.enghub.reading.dto.PassageRequest;
 import com.nhuhuy05.enghub.reading.dto.PassageResponse;
-import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
-import com.nhuhuy05.enghub.reading.repository.QuestionGroupPassageRepository;
+import com.nhuhuy05.enghub.reading.entity.Passage;
+import com.nhuhuy05.enghub.reading.repository.PassageRepository;
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import com.nhuhuy05.enghub.test.repository.QuestionGroupRepository;
 import lombok.AccessLevel;
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PassageService {
-    QuestionGroupPassageRepository questionGroupPassageRepository;
+    PassageRepository passageRepository;
     QuestionGroupRepository questionGroupRepository;
     MediaAssetRepository mediaAssetRepository;
 
@@ -36,12 +36,12 @@ public class PassageService {
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_EXISTED));
 
         int orderIndex = request.getOrderIndex() == null ? 0 : request.getOrderIndex();
-        questionGroupPassageRepository.findByQuestionGroupIdAndOrderIndex(questionGroup.getId(), orderIndex)
+        passageRepository.findByQuestionGroupIdAndOrderIndex(questionGroup.getId(), orderIndex)
                 .ifPresent(existing -> {
                     throw new AppException(ErrorCode.INVALID_KEY);
                 });
 
-        QuestionGroupPassage passage = QuestionGroupPassage.builder()
+        Passage passage = Passage.builder()
                 .questionGroup(questionGroup)
                 .title(request.getTitle())
                 .passageType(request.getPassageType())
@@ -53,17 +53,17 @@ public class PassageService {
                 .orderIndex(orderIndex)
                 .build();
 
-        return toResponse(questionGroupPassageRepository.save(passage));
+        return toResponse(passageRepository.save(passage));
     }
 
     @Transactional
     public PassageResponse updatePassageMedia(Long passageId, PassageMediaRequest request) {
-        QuestionGroupPassage passage = questionGroupPassageRepository.findById(passageId)
+        Passage passage = passageRepository.findById(passageId)
                 .orElseThrow(() -> new AppException(ErrorCode.PASSAGE_NOT_EXISTED));
 
         Long testId = passage.getQuestionGroup().getTestPart().getTest().getId();
         passage.setMediaAsset(resolveMedia(request.getMediaAssetId(), testId));
-        return toResponse(questionGroupPassageRepository.save(passage));
+        return toResponse(passageRepository.save(passage));
     }
 
     private MediaAsset resolveMedia(Long mediaAssetId, Long expectedTestId) {
@@ -78,7 +78,7 @@ public class PassageService {
         return mediaAsset;
     }
 
-    private PassageResponse toResponse(QuestionGroupPassage passage) {
+    private PassageResponse toResponse(Passage passage) {
         return PassageResponse.builder()
                 .id(passage.getId())
                 .questionGroupId(passage.getQuestionGroup().getId())

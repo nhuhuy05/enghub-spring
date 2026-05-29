@@ -24,8 +24,11 @@ public class Answer {
     @JoinColumn(name = "question_id", nullable = false)
     Question question;
 
-    @Column(name = "answer_text", nullable = false)
-    String answerText;
+    @Column(name = "answer_text_en", nullable = false)
+    String answerTextEn;
+
+    @Column(name = "answer_text_vi")
+    String answerTextVi;
 
     @Column(name = "is_correct", nullable = false)
     boolean isCorrect;

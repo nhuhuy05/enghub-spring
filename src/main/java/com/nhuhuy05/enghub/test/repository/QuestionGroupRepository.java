@@ -2,6 +2,7 @@ package com.nhuhuy05.enghub.test.repository;
 
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -16,4 +17,15 @@ public interface QuestionGroupRepository extends JpaRepository<QuestionGroup, Lo
     );
 
     List<QuestionGroup> findAllByTestPartTestId(Long testId);
+
+    boolean existsByMediaAssetId(Long mediaAssetId);
+
+    @Query("""
+            select count(qg)
+            from QuestionGroup qg
+            where qg.testPart.test.id = :testId
+              and qg.testPart.partNumber = 1
+              and qg.mediaAsset is null
+            """)
+    long countPartOneGroupsWithoutImage(Long testId);
 }

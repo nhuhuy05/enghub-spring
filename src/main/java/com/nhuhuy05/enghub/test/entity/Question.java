@@ -29,10 +29,14 @@ public class Question {
     @Column(name = "question_number", nullable = false)
     Integer questionNumber;
 
-    @Column(name = "question_text")
-    String questionText;
+    @Column(name = "question_text_en")
+    String questionTextEn;
 
-    String explanation;
+    @Column(name = "question_text_vi")
+    String questionTextVi;
+
+    @Column(name = "explanation_vi")
+    String explanationVi;
 
     @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
     Set<Answer> answers;
