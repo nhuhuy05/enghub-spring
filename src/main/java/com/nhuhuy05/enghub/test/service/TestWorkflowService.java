@@ -2,9 +2,9 @@ package com.nhuhuy05.enghub.test.service;
 
 import com.nhuhuy05.enghub.common.exception.AppException;
 import com.nhuhuy05.enghub.common.exception.ErrorCode;
-import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudioRange;
-import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRangeRepository;
-import com.nhuhuy05.enghub.reading.repository.PassageRepository;
+import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudio;
+import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRepository;
+import com.nhuhuy05.enghub.reading.repository.QuestionGroupPassageRepository;
 import com.nhuhuy05.enghub.test.dto.AudioRangeResponse;
 import com.nhuhuy05.enghub.test.dto.AudioRangeUpdateRequest;
 import com.nhuhuy05.enghub.test.dto.PublishResponse;
@@ -12,6 +12,7 @@ import com.nhuhuy05.enghub.test.dto.TestPreviewResponse;
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import com.nhuhuy05.enghub.test.entity.Test;
 import com.nhuhuy05.enghub.test.repository.QuestionGroupRepository;
+import com.nhuhuy05.enghub.test.repository.QuestionGroupImageRepository;
 import com.nhuhuy05.enghub.test.repository.QuestionRepository;
 import com.nhuhuy05.enghub.test.repository.TestRepository;
 import lombok.AccessLevel;
@@ -30,8 +31,9 @@ public class TestWorkflowService {
     TestRepository testRepository;
     QuestionRepository questionRepository;
     QuestionGroupRepository questionGroupRepository;
-    QuestionGroupAudioRangeRepository questionGroupAudioRangeRepository;
-    PassageRepository passageRepository;
+    QuestionGroupImageRepository questionGroupImageRepository;
+    QuestionGroupAudioRepository questionGroupAudioRepository;
+    QuestionGroupPassageRepository questionGroupPassageRepository;
 
     @Transactional
     public List<AudioRangeResponse> updateAudioRanges(Long testId, List<AudioRangeUpdateRequest> requests) {
@@ -88,22 +90,22 @@ public class TestWorkflowService {
                 )
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_EXISTED));
 
-        QuestionGroupAudioRange range = questionGroupAudioRangeRepository
+        QuestionGroupAudio range = questionGroupAudioRepository
                 .findByQuestionGroupIdAndOrderIndex(questionGroup.getId(), 0)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_EXISTED));
 
         range.setStartMs(request.getStartMs());
         range.setEndMs(request.getEndMs());
 
-        return toAudioRangeResponse(questionGroupAudioRangeRepository.save(range));
+        return toAudioRangeResponse(questionGroupAudioRepository.save(range));
     }
 
     private TestPreviewResponse buildPreview(Long testId) {
         long questionCount = questionRepository.countByTestId(testId);
         long invalidCorrectAnswerCount = questionRepository.countQuestionsWithoutExactlyOneCorrectAnswer(testId);
-        long partOneMissingImageCount = questionGroupRepository.countPartOneGroupsWithoutImage(testId);
-        long listeningMissingAudioRangeCount = questionGroupAudioRangeRepository.countListeningGroupsWithoutValidAudioRange(testId);
-        long readingMissingPassageCount = passageRepository.countReadingGroupsWithoutPassage(testId);
+        long partOneMissingImageCount = questionGroupImageRepository.countPartOneGroupsWithoutImage(testId);
+        long listeningMissingAudioRangeCount = questionGroupAudioRepository.countListeningGroupsWithoutValidAudioRange(testId);
+        long readingMissingPassageCount = questionGroupPassageRepository.countReadingGroupsWithoutPassage(testId);
 
         List<String> errors = new ArrayList<>();
         if (questionCount != 200) {
@@ -131,7 +133,7 @@ public class TestWorkflowService {
                 .build();
     }
 
-    private AudioRangeResponse toAudioRangeResponse(QuestionGroupAudioRange range) {
+    private AudioRangeResponse toAudioRangeResponse(QuestionGroupAudio range) {
         return AudioRangeResponse.builder()
                 .id(range.getId())
                 .questionGroupId(range.getQuestionGroup().getId())

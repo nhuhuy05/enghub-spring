@@ -2,19 +2,23 @@ package com.nhuhuy05.enghub.test.service;
 
 import com.nhuhuy05.enghub.common.exception.AppException;
 import com.nhuhuy05.enghub.common.exception.ErrorCode;
-import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudioRange;
-import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRangeRepository;
+import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudio;
+import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRepository;
 import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import com.nhuhuy05.enghub.media.repository.MediaAssetRepository;
+import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
+import com.nhuhuy05.enghub.reading.repository.QuestionGroupPassageRepository;
 import com.nhuhuy05.enghub.test.dto.ImportErrorResponse;
 import com.nhuhuy05.enghub.test.dto.ImportSummaryResponse;
 import com.nhuhuy05.enghub.test.dto.TestImportResponse;
 import com.nhuhuy05.enghub.test.entity.Answer;
 import com.nhuhuy05.enghub.test.entity.Question;
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
+import com.nhuhuy05.enghub.test.entity.QuestionGroupImage;
 import com.nhuhuy05.enghub.test.entity.TestPart;
 import com.nhuhuy05.enghub.test.repository.AnswerRepository;
 import com.nhuhuy05.enghub.test.repository.QuestionGroupRepository;
+import com.nhuhuy05.enghub.test.repository.QuestionGroupImageRepository;
 import com.nhuhuy05.enghub.test.repository.QuestionRepository;
 import com.nhuhuy05.enghub.test.repository.TestAttemptRepository;
 import com.nhuhuy05.enghub.test.repository.TestPartRepository;
@@ -45,7 +49,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -57,9 +60,11 @@ public class TestImportService {
     TestPartRepository testPartRepository;
     QuestionRepository questionRepository;
     QuestionGroupRepository questionGroupRepository;
+    QuestionGroupImageRepository questionGroupImageRepository;
     AnswerRepository answerRepository;
     MediaAssetRepository mediaAssetRepository;
-    QuestionGroupAudioRangeRepository questionGroupAudioRangeRepository;
+    QuestionGroupAudioRepository questionGroupAudioRepository;
+    QuestionGroupPassageRepository questionGroupPassageRepository;
     TestAttemptRepository testAttemptRepository;
 
     static final List<String> REQUIRED_HEADERS = List.of(
@@ -176,8 +181,6 @@ public class TestImportService {
         }
 
         Set<Integer> questionNumbers = new HashSet<>();
-        boolean hasListeningRows = false;
-
         for (QuestionRow row : rows) {
             validateRequiredIntegers(row, errors);
             if (row.part() == null || row.groupOrder() == null || row.questionNumber() == null) {
@@ -198,13 +201,10 @@ public class TestImportService {
             }
 
             validateOptions(row, errors);
-            if (row.part() >= 1 && row.part() <= 4) {
-                hasListeningRows = true;
-            }
         }
 
         validatePartsExist(testId, rows, errors);
-        validateMedia(testId, rows, hasListeningRows, errors);
+        validateMedia(testId, rows, errors);
     }
 
     private void validateRequiredIntegers(QuestionRow row, List<ImportErrorResponse> errors) {
@@ -264,20 +264,18 @@ public class TestImportService {
         }
     }
 
-    private void validateMedia(Long testId, List<QuestionRow> rows, boolean hasListeningRows, List<ImportErrorResponse> errors) {
-        if (hasListeningRows && mediaAssetRepository.findByTestIdAndLabelAndMediaType(testId, "audio_main", "audio").isEmpty()) {
-            errors.add(error(1, "media", "Missing audio media with label=audio_main for Part 1-4"));
-        }
+    private void validateMedia(Long testId, List<QuestionRow> rows, List<ImportErrorResponse> errors) {
+        Map<GroupKey, List<QuestionRow>> rowsByGroup = groupValidRows(rows);
 
-        Set<Integer> partOneGroups = rows.stream()
-                .filter(row -> row.part() != null && row.part() == 1)
-                .map(QuestionRow::groupOrder)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(TreeSet::new));
+        for (Map.Entry<GroupKey, List<QuestionRow>> entry : rowsByGroup.entrySet()) {
+            GroupKey key = entry.getKey();
+            List<QuestionRow> groupRows = entry.getValue();
 
-        for (Integer groupOrder : partOneGroups) {
-            if (mediaAssetRepository.findByTestIdAndLabelAndMediaType(testId, String.valueOf(groupOrder), "image").isEmpty()) {
-                errors.add(error(1, "media", "Part 1 group_order " + groupOrder + " is missing image label=" + groupOrder));
+            if (key.part() == 1 && findGroupImage(testId, key, groupRows).isEmpty()) {
+                errors.add(error(1, "media", "Part 1 group_order " + key.groupOrder() + " is missing image"));
+            }
+            if (key.part() >= 1 && key.part() <= 4 && findGroupAudio(testId, key, groupRows).isEmpty()) {
+                errors.add(error(1, "media", "Part " + key.part() + " group_order " + key.groupOrder() + " is missing audio"));
             }
         }
     }
@@ -286,38 +284,150 @@ public class TestImportService {
         Map<Integer, TestPart> partsByNumber = testPartRepository.findAllByTestIdOrderByPartNumberAsc(testId).stream()
                 .collect(Collectors.toMap(TestPart::getPartNumber, Function.identity()));
 
-        Optional<MediaAsset> mainAudio = mediaAssetRepository.findByTestIdAndLabelAndMediaType(testId, "audio_main", "audio");
-
-        Map<GroupKey, List<QuestionRow>> rowsByGroup = rows.stream()
-                .collect(Collectors.groupingBy(row -> new GroupKey(row.part(), row.groupOrder()), TreeMap::new, Collectors.toList()));
+        Map<GroupKey, List<QuestionRow>> rowsByGroup = groupValidRows(rows);
 
         for (Map.Entry<GroupKey, List<QuestionRow>> entry : rowsByGroup.entrySet()) {
             GroupKey key = entry.getKey();
+            List<QuestionRow> groupRows = entry.getValue();
             TestPart testPart = partsByNumber.get(key.part());
-            MediaAsset image = mediaAssetRepository
-                    .findByTestIdAndLabelAndMediaType(testId, String.valueOf(key.groupOrder()), "image")
-                    .orElse(null);
 
             QuestionGroup questionGroup = questionGroupRepository.save(QuestionGroup.builder()
                     .testPart(testPart)
-                    .mediaAsset(image)
                     .orderIndex(key.groupOrder())
                     .build());
 
-            if (key.part() >= 1 && key.part() <= 4 && mainAudio.isPresent()) {
-                questionGroupAudioRangeRepository.save(QuestionGroupAudioRange.builder()
+            if (key.part() == 1 || key.part() == 3 || key.part() == 4) {
+                findGroupImage(testId, key, groupRows)
+                        .ifPresent(image -> persistGroupImage(questionGroup, image, 0));
+            }
+
+            if (key.part() >= 1 && key.part() <= 4) {
+                MediaAsset audio = findGroupAudio(testId, key, groupRows)
+                        .orElseThrow(() -> new AppException(ErrorCode.MEDIA_ASSET_NOT_EXISTED));
+                questionGroupAudioRepository.save(QuestionGroupAudio.builder()
                         .questionGroup(questionGroup)
-                        .mediaAsset(mainAudio.get())
+                        .mediaAsset(audio)
                         .startMs(0)
                         .endMs(null)
                         .orderIndex(0)
                         .build());
             }
 
-            entry.getValue().stream()
+            if (key.part() == 6 || key.part() == 7) {
+                persistPassageImages(testId, questionGroup, key, groupRows);
+            }
+
+            groupRows.stream()
                     .sorted(Comparator.comparing(QuestionRow::questionNumber))
                     .forEach(row -> persistQuestion(questionGroup, row));
         }
+    }
+
+    private Map<GroupKey, List<QuestionRow>> groupValidRows(List<QuestionRow> rows) {
+        return rows.stream()
+                .filter(row -> row.part() != null && row.groupOrder() != null && row.questionNumber() != null)
+                .collect(Collectors.groupingBy(
+                        row -> new GroupKey(row.part(), row.groupOrder()),
+                        TreeMap::new,
+                        Collectors.toList()
+                ));
+    }
+
+    private Optional<MediaAsset> findGroupImage(Long testId, GroupKey key, List<QuestionRow> groupRows) {
+        return findMedia(testId, "image", groupLabelCandidates(key, groupRows));
+    }
+
+    private Optional<MediaAsset> findGroupAudio(Long testId, GroupKey key, List<QuestionRow> groupRows) {
+        List<String> labels = new ArrayList<>(groupLabelCandidates(key, groupRows));
+        labels.add("audio_main");
+        return findMedia(testId, "audio", labels);
+    }
+
+    private Optional<MediaAsset> findMedia(Long testId, String mediaType, List<String> labels) {
+        return labels.stream()
+                .filter(label -> label != null && !label.isBlank())
+                .distinct()
+                .map(label -> mediaAssetRepository.findByTestIdAndLabelAndMediaType(testId, label, mediaType))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    private void persistGroupImage(QuestionGroup questionGroup, MediaAsset mediaAsset, int orderIndex) {
+        questionGroupImageRepository.save(QuestionGroupImage.builder()
+                .questionGroup(questionGroup)
+                .mediaAsset(mediaAsset)
+                .orderIndex(orderIndex)
+                .build());
+    }
+
+    private void persistPassageImages(Long testId, QuestionGroup questionGroup, GroupKey key, List<QuestionRow> groupRows) {
+        List<String> baseLabels = groupLabelCandidates(key, groupRows);
+
+        List<MediaAsset> pageImages = new ArrayList<>();
+        for (int page = 1; page <= 20; page++) {
+            Optional<MediaAsset> pageImage = findMedia(testId, "image", pageLabelCandidates(baseLabels, page));
+            if (pageImage.isEmpty()) {
+                break;
+            }
+            pageImages.add(pageImage.get());
+        }
+
+        if (pageImages.isEmpty()) {
+            findMedia(testId, "image", baseLabels).ifPresent(pageImages::add);
+        }
+
+        for (int index = 0; index < pageImages.size(); index++) {
+            MediaAsset image = pageImages.get(index);
+            questionGroupPassageRepository.save(QuestionGroupPassage.builder()
+                    .questionGroup(questionGroup)
+                    .title(image.getLabel())
+                    .passageType("image")
+                    .contentFormat("image")
+                    .mediaAsset(image)
+                    .orderIndex(index)
+                    .build());
+        }
+    }
+
+    private List<String> groupLabelCandidates(GroupKey key, List<QuestionRow> groupRows) {
+        int start = groupRows.stream()
+                .map(QuestionRow::questionNumber)
+                .min(Integer::compareTo)
+                .orElse(key.groupOrder());
+        int end = groupRows.stream()
+                .map(QuestionRow::questionNumber)
+                .max(Integer::compareTo)
+                .orElse(start);
+
+        List<String> labels = new ArrayList<>();
+        labels.add(canonicalLabel(key.part(), start, end));
+        labels.add(plainRangeLabel(start, end));
+        labels.add(String.valueOf(key.groupOrder()));
+        return labels;
+    }
+
+    private List<String> pageLabelCandidates(List<String> baseLabels, int page) {
+        List<String> labels = new ArrayList<>();
+        for (String baseLabel : baseLabels) {
+            labels.add(baseLabel + "-" + String.format("%02d", page));
+            labels.add(baseLabel + "-" + page);
+            labels.add(baseLabel + "(" + page + ")");
+        }
+        return labels;
+    }
+
+    private String canonicalLabel(int part, int start, int end) {
+        if (start == end) {
+            return String.format("p%02d-q%03d", part, start);
+        }
+        return String.format("p%02d-q%03d-%03d", part, start, end);
+    }
+
+    private String plainRangeLabel(int start, int end) {
+        if (start == end) {
+            return String.valueOf(start);
+        }
+        return start + "-" + end;
     }
 
     private void clearImportedContent(Long testId) {

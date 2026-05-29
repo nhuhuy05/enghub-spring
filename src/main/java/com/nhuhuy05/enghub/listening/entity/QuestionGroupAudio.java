@@ -14,10 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(
-        name = "question_group_audio_ranges",
-        uniqueConstraints = @UniqueConstraint(name = "uq_question_group_audio_ranges_order", columnNames = {"question_group_id", "order_index"})
+        name = "question_group_audios",
+        uniqueConstraints = @UniqueConstraint(name = "uq_question_group_audios_order", columnNames = {"question_group_id", "order_index"})
 )
-public class QuestionGroupAudioRange {
+public class QuestionGroupAudio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;

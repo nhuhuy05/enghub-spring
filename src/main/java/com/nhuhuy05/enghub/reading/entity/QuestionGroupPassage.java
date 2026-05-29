@@ -14,10 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(
-        name = "passages",
-        uniqueConstraints = @UniqueConstraint(name = "uq_passages_group_order", columnNames = {"question_group_id", "order_index"})
+        name = "question_group_passages",
+        uniqueConstraints = @UniqueConstraint(name = "uq_question_group_passages_order", columnNames = {"question_group_id", "order_index"})
 )
-public class Passage {
+public class QuestionGroupPassage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
