@@ -1,0 +1,402 @@
+package com.nhuhuy05.enghub.test.service;
+
+import com.nhuhuy05.enghub.common.exception.AppException;
+import com.nhuhuy05.enghub.common.exception.ErrorCode;
+import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudio;
+import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRepository;
+import com.nhuhuy05.enghub.media.entity.MediaAsset;
+import com.nhuhuy05.enghub.media.repository.MediaAssetRepository;
+import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
+import com.nhuhuy05.enghub.reading.repository.QuestionGroupPassageRepository;
+import com.nhuhuy05.enghub.test.dto.*;
+import com.nhuhuy05.enghub.test.entity.Answer;
+import com.nhuhuy05.enghub.test.entity.Question;
+import com.nhuhuy05.enghub.test.entity.QuestionGroup;
+import com.nhuhuy05.enghub.test.entity.QuestionGroupImage;
+import com.nhuhuy05.enghub.test.entity.Test;
+import com.nhuhuy05.enghub.test.entity.TestPart;
+import com.nhuhuy05.enghub.test.repository.*;
+import com.nhuhuy05.enghub.user.repository.UserRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class QuestionGroupReviewService {
+    TestRepository testRepository;
+    TestPartRepository testPartRepository;
+    QuestionGroupRepository questionGroupRepository;
+    QuestionGroupImageRepository questionGroupImageRepository;
+    QuestionGroupAudioRepository questionGroupAudioRepository;
+    QuestionGroupPassageRepository questionGroupPassageRepository;
+    QuestionRepository questionRepository;
+    AnswerRepository answerRepository;
+    MediaAssetRepository mediaAssetRepository;
+    UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public List<QuestionGroupListItemResponse> getQuestionGroups(Long testId) {
+        testRepository.findById(testId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
+
+        return questionGroupRepository.findAllByTestPartTestIdOrderByTestPartPartNumberAscOrderIndexAsc(testId).stream()
+                .map(this::toListItem)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionGroupDetailResponse getQuestionGroup(Long groupId) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional(readOnly = true)
+    public TestPreviewContentResponse getPreviewContent(Long testId) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
+
+        Map<Integer, List<QuestionGroup>> groupsByPart = questionGroupRepository
+                .findAllByTestPartTestIdOrderByTestPartPartNumberAscOrderIndexAsc(testId).stream()
+                .collect(Collectors.groupingBy(group -> group.getTestPart().getPartNumber()));
+
+        List<TestPreviewContentResponse.PartResponse> parts = testPartRepository.findAllByTestIdOrderByPartNumberAsc(testId).stream()
+                .map(part -> TestPreviewContentResponse.PartResponse.builder()
+                        .partNumber(part.getPartNumber())
+                        .title(part.getTitle())
+                        .groups(groupsByPart.getOrDefault(part.getPartNumber(), List.of()).stream()
+                                .map(this::toDetail)
+                                .toList())
+                        .build())
+                .toList();
+
+        return TestPreviewContentResponse.builder()
+                .testId(test.getId())
+                .title(test.getTitle())
+                .description(test.getDescription())
+                .durationMinutes(test.getDurationMinutes())
+                .parts(parts)
+                .build();
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateReviewStatus(Long groupId, String userEmail, ReviewStatusUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        String reviewStatus = normalizeReviewStatus(request.getReviewStatus());
+        questionGroup.setReviewStatus(reviewStatus);
+        if ("reviewed".equals(reviewStatus)) {
+            questionGroup.setReviewedAt(LocalDateTime.now());
+            userRepository.findByEmail(userEmail).ifPresent(user -> questionGroup.setReviewedBy(user.getId()));
+        } else {
+            questionGroup.setReviewedAt(null);
+            questionGroup.setReviewedBy(null);
+        }
+        return toDetail(questionGroupRepository.save(questionGroup));
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateImages(Long groupId, QuestionGroupImagesUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        Long testId = questionGroup.getTestPart().getTest().getId();
+
+        questionGroupImageRepository.deleteAllByQuestionGroupId(groupId);
+        int fallbackOrder = 0;
+        for (QuestionGroupImagesUpdateRequest.Item item : request.getImages()) {
+            MediaAsset media = resolveMedia(testId, item.getMediaAssetId(), "image");
+            questionGroupImageRepository.save(QuestionGroupImage.builder()
+                    .questionGroup(questionGroup)
+                    .mediaAsset(media)
+                    .orderIndex(item.getOrderIndex() == null ? fallbackOrder : item.getOrderIndex())
+                    .build());
+            fallbackOrder++;
+        }
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateAudio(Long groupId, QuestionGroupAudioUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        Long testId = questionGroup.getTestPart().getTest().getId();
+
+        QuestionGroupAudio audio = questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(groupId, 0)
+                .orElseGet(() -> QuestionGroupAudio.builder()
+                        .questionGroup(questionGroup)
+                        .startMs(0)
+                        .orderIndex(0)
+                        .build());
+
+        if (request.getMediaAssetId() != null) {
+            audio.setMediaAsset(resolveMedia(testId, request.getMediaAssetId(), "audio"));
+        }
+        if (audio.getMediaAsset() == null) {
+            throw new AppException(ErrorCode.MEDIA_ASSET_NOT_EXISTED);
+        }
+
+        Integer startMs = request.getStartMs() == null ? audio.getStartMs() : request.getStartMs();
+        Integer endMs = request.getEndMs() == null ? audio.getEndMs() : request.getEndMs();
+        validateTimeRange(startMs, endMs);
+
+        audio.setStartMs(startMs == null ? 0 : startMs);
+        audio.setEndMs(endMs);
+        audio.setTranscriptEn(request.getTranscriptEn());
+        audio.setTranscriptVi(request.getTranscriptVi());
+        questionGroupAudioRepository.save(audio);
+
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateTranscript(Long groupId, QuestionGroupTranscriptUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        QuestionGroupAudio audio = questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(groupId, 0)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_EXISTED));
+        audio.setTranscriptEn(request.getTranscriptEn());
+        audio.setTranscriptVi(request.getTranscriptVi());
+        questionGroupAudioRepository.save(audio);
+
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updatePassages(Long groupId, QuestionGroupPassagesUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        Long testId = questionGroup.getTestPart().getTest().getId();
+
+        questionGroupPassageRepository.deleteAllByQuestionGroupId(groupId);
+        int fallbackOrder = 0;
+        for (QuestionGroupPassagesUpdateRequest.Item item : request.getPassages()) {
+            MediaAsset media = item.getMediaAssetId() == null ? null : resolveMedia(testId, item.getMediaAssetId(), "image");
+            questionGroupPassageRepository.save(QuestionGroupPassage.builder()
+                    .questionGroup(questionGroup)
+                    .mediaAsset(media)
+                    .title(item.getTitle())
+                    .passageType(item.getPassageType())
+                    .contentFormat(item.getContentFormat())
+                    .contentEn(item.getContentEn())
+                    .contentVi(item.getContentVi())
+                    .vocabHints(item.getVocabHints())
+                    .orderIndex(item.getOrderIndex() == null ? fallbackOrder : item.getOrderIndex())
+                    .build());
+            fallbackOrder++;
+        }
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateQuestion(Long questionId, QuestionUpdateRequest request) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_EXISTED));
+        question.setQuestionTextEn(request.getQuestionTextEn());
+        question.setQuestionTextVi(request.getQuestionTextVi());
+        question.setExplanationVi(request.getExplanationVi());
+        questionRepository.save(question);
+
+        QuestionGroup questionGroup = question.getQuestionGroup();
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
+    public QuestionGroupDetailResponse updateAnswer(Long answerId, AnswerUpdateRequest request) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new AppException(ErrorCode.ANSWER_NOT_EXISTED));
+        answer.setAnswerTextEn(request.getAnswerTextEn());
+        answer.setAnswerTextVi(request.getAnswerTextVi());
+
+        if (request.getCorrect() != null) {
+            if (request.getCorrect()) {
+                List<Answer> answers = answerRepository.findAllByQuestionIdOrderByIdAsc(answer.getQuestion().getId());
+                answers.forEach(existing -> existing.setCorrect(Objects.equals(existing.getId(), answer.getId())));
+                answerRepository.saveAll(answers);
+            } else {
+                answer.setCorrect(false);
+                answerRepository.save(answer);
+            }
+        } else {
+            answerRepository.save(answer);
+        }
+
+        QuestionGroup questionGroup = answer.getQuestion().getQuestionGroup();
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    private QuestionGroup getGroup(Long groupId) {
+        return questionGroupRepository.findById(groupId)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_EXISTED));
+    }
+
+    private QuestionGroupListItemResponse toListItem(QuestionGroup group) {
+        List<Question> questions = questionRepository.findAllByQuestionGroupIdOrderByQuestionNumberAsc(group.getId());
+        return QuestionGroupListItemResponse.builder()
+                .id(group.getId())
+                .partNumber(group.getTestPart().getPartNumber())
+                .groupOrder(group.getOrderIndex())
+                .questionNumbers(questions.stream().map(Question::getQuestionNumber).toList())
+                .reviewStatus(group.getReviewStatus())
+                .missingFlags(missingFlags(group, questions))
+                .build();
+    }
+
+    private QuestionGroupDetailResponse toDetail(QuestionGroup group) {
+        return QuestionGroupDetailResponse.builder()
+                .id(group.getId())
+                .partNumber(group.getTestPart().getPartNumber())
+                .groupOrder(group.getOrderIndex())
+                .reviewStatus(group.getReviewStatus())
+                .images(groupImages(group.getId()))
+                .audio(groupAudio(group.getId()))
+                .passages(groupPassages(group.getId()))
+                .questions(groupQuestions(group.getId()))
+                .build();
+    }
+
+    private List<QuestionGroupDetailResponse.GroupImageResponse> groupImages(Long groupId) {
+        return questionGroupImageRepository.findAllByQuestionGroupIdOrderByOrderIndexAsc(groupId).stream()
+                .map(image -> QuestionGroupDetailResponse.GroupImageResponse.builder()
+                        .id(image.getId())
+                        .mediaAssetId(image.getMediaAsset().getId())
+                        .label(image.getMediaAsset().getLabel())
+                        .url(image.getMediaAsset().getUrl())
+                        .orderIndex(image.getOrderIndex())
+                        .build())
+                .toList();
+    }
+
+    private QuestionGroupDetailResponse.GroupAudioResponse groupAudio(Long groupId) {
+        return questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(groupId, 0)
+                .map(audio -> QuestionGroupDetailResponse.GroupAudioResponse.builder()
+                        .id(audio.getId())
+                        .mediaAssetId(audio.getMediaAsset().getId())
+                        .label(audio.getMediaAsset().getLabel())
+                        .url(audio.getMediaAsset().getUrl())
+                        .startMs(audio.getStartMs())
+                        .endMs(audio.getEndMs())
+                        .transcriptEn(audio.getTranscriptEn())
+                        .transcriptVi(audio.getTranscriptVi())
+                        .build())
+                .orElse(null);
+    }
+
+    private List<QuestionGroupDetailResponse.GroupPassageResponse> groupPassages(Long groupId) {
+        return questionGroupPassageRepository.findAllByQuestionGroupIdOrderByOrderIndexAsc(groupId).stream()
+                .map(passage -> QuestionGroupDetailResponse.GroupPassageResponse.builder()
+                        .id(passage.getId())
+                        .mediaAssetId(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getId())
+                        .label(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getLabel())
+                        .url(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getUrl())
+                        .title(passage.getTitle())
+                        .passageType(passage.getPassageType())
+                        .contentFormat(passage.getContentFormat())
+                        .contentEn(passage.getContentEn())
+                        .contentVi(passage.getContentVi())
+                        .vocabHints(passage.getVocabHints())
+                        .orderIndex(passage.getOrderIndex())
+                        .build())
+                .toList();
+    }
+
+    private List<QuestionGroupDetailResponse.GroupQuestionResponse> groupQuestions(Long groupId) {
+        return questionRepository.findAllByQuestionGroupIdOrderByQuestionNumberAsc(groupId).stream()
+                .map(question -> QuestionGroupDetailResponse.GroupQuestionResponse.builder()
+                        .id(question.getId())
+                        .questionNumber(question.getQuestionNumber())
+                        .questionTextEn(question.getQuestionTextEn())
+                        .questionTextVi(question.getQuestionTextVi())
+                        .explanationVi(question.getExplanationVi())
+                        .answers(groupAnswers(question.getId()))
+                        .build())
+                .toList();
+    }
+
+    private List<QuestionGroupDetailResponse.GroupAnswerResponse> groupAnswers(Long questionId) {
+        List<Answer> answers = answerRepository.findAllByQuestionIdOrderByIdAsc(questionId);
+        return answers.stream()
+                .map(answer -> QuestionGroupDetailResponse.GroupAnswerResponse.builder()
+                        .id(answer.getId())
+                        .label(answerLabel(answers, answer))
+                        .answerTextEn(answer.getAnswerTextEn())
+                        .answerTextVi(answer.getAnswerTextVi())
+                        .correct(answer.isCorrect())
+                        .build())
+                .toList();
+    }
+
+    private String answerLabel(List<Answer> answers, Answer answer) {
+        int index = answers.indexOf(answer);
+        return switch (index) {
+            case 0 -> "A";
+            case 1 -> "B";
+            case 2 -> "C";
+            case 3 -> "D";
+            default -> String.valueOf(index + 1);
+        };
+    }
+
+    private List<String> missingFlags(QuestionGroup group, List<Question> questions) {
+        List<String> flags = new ArrayList<>();
+        int part = group.getTestPart().getPartNumber();
+        if (questions.isEmpty()) {
+            flags.add("missing_questions");
+        }
+        if (part == 1 && questionGroupImageRepository.findAllByQuestionGroupIdOrderByOrderIndexAsc(group.getId()).isEmpty()) {
+            flags.add("missing_image");
+        }
+        if (part >= 1 && part <= 4 && questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(group.getId(), 0).isEmpty()) {
+            flags.add("missing_audio");
+        }
+        if ((part == 6 || part == 7) && questionGroupPassageRepository.findAllByQuestionGroupIdOrderByOrderIndexAsc(group.getId()).isEmpty()) {
+            flags.add("missing_passage");
+        }
+        return flags;
+    }
+
+    private MediaAsset resolveMedia(Long testId, Long mediaAssetId, String mediaType) {
+        MediaAsset media = mediaAssetRepository.findById(mediaAssetId)
+                .orElseThrow(() -> new AppException(ErrorCode.MEDIA_ASSET_NOT_EXISTED));
+        if (!media.getTest().getId().equals(testId) || !media.getMediaType().equals(mediaType)) {
+            throw new AppException(ErrorCode.MEDIA_ASSET_NOT_EXISTED);
+        }
+        return media;
+    }
+
+    private void validateTimeRange(Integer startMs, Integer endMs) {
+        if (startMs != null && startMs < 0) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        if (endMs != null && startMs != null && endMs <= startMs) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+    }
+
+    private void markNeedsReview(QuestionGroup group) {
+        group.setReviewStatus("needs_review");
+        group.setReviewedAt(null);
+        group.setReviewedBy(null);
+        questionGroupRepository.save(group);
+    }
+
+    private String normalizeReviewStatus(String reviewStatus) {
+        String normalized = reviewStatus == null ? "" : reviewStatus.trim().toLowerCase();
+        if (!normalized.equals("needs_review") && !normalized.equals("reviewed")) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        return normalized;
+    }
+}
