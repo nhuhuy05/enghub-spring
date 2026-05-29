@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
         name = "question_group_audios",
         uniqueConstraints = @UniqueConstraint(name = "uq_question_group_audios_order", columnNames = {"question_group_id", "order_index"})
 )
-public class QuestionGroupAudioRange {
+public class QuestionGroupAudio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -35,6 +35,12 @@ public class QuestionGroupAudioRange {
 
     @Column(name = "end_ms")
     Integer endMs;
+
+    @Column(name = "transcript_en")
+    String transcriptEn;
+
+    @Column(name = "transcript_vi")
+    String transcriptVi;
 
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;
