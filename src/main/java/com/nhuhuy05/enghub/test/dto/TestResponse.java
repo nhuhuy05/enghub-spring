@@ -35,6 +35,9 @@ public class TestResponse {
     @JsonProperty("is_published")
     Boolean published;
 
+    @JsonProperty("workflow_status")
+    String workflowStatus;
+
     @JsonProperty("created_at")
     LocalDateTime createdAt;
 }

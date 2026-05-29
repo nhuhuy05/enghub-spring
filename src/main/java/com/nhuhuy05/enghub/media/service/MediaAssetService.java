@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -37,6 +38,16 @@ public class MediaAssetService {
     QuestionGroupImageRepository questionGroupImageRepository;
     QuestionGroupAudioRepository questionGroupAudioRepository;
     QuestionGroupPassageRepository questionGroupPassageRepository;
+
+    @Transactional(readOnly = true)
+    public List<MediaAssetResponse> getMedia(Long testId) {
+        testRepository.findById(testId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
+
+        return mediaAssetRepository.findAllByTestIdOrderByCreatedAtAsc(testId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     @Transactional
     public MediaAssetResponse uploadMedia(Long testId, MultipartFile file, String label, String mediaType) {
@@ -55,8 +66,9 @@ public class MediaAssetService {
             throw new AppException(ErrorCode.MEDIA_ASSET_EXISTED);
         }
 
-        String publicId = buildPublicId(testId, normalizedType, normalizedLabel);
-        Map uploadResult = uploadToCloudinary(file, publicId);
+        String folder = buildAssetFolder(testId, normalizedType);
+        String publicId = buildPublicId(folder, normalizedLabel);
+        Map uploadResult = uploadToCloudinary(file, publicId, folder);
 
         MediaAsset mediaAsset = MediaAsset.builder()
                 .test(test)
@@ -78,7 +90,8 @@ public class MediaAssetService {
 
         validateFile(file, mediaAsset.getMediaType());
 
-        Map uploadResult = uploadToCloudinary(file, mediaAsset.getCloudinaryPublicId(), true);
+        String folder = extractFolder(mediaAsset.getCloudinaryPublicId());
+        Map uploadResult = uploadToCloudinary(file, mediaAsset.getCloudinaryPublicId(), folder, true);
         mediaAsset.setUrl(String.valueOf(uploadResult.get("secure_url")));
         mediaAsset.setDurationMs(resolveDurationMs(uploadResult));
         mediaAsset.setOriginalFilename(file.getOriginalFilename());
@@ -105,14 +118,15 @@ public class MediaAssetService {
         }
     }
 
-    private Map uploadToCloudinary(MultipartFile file, String publicId) {
-        return uploadToCloudinary(file, publicId, false);
+    private Map uploadToCloudinary(MultipartFile file, String publicId, String folder) {
+        return uploadToCloudinary(file, publicId, folder, false);
     }
 
-    private Map uploadToCloudinary(MultipartFile file, String publicId, boolean overwrite) {
+    private Map uploadToCloudinary(MultipartFile file, String publicId, String folder, boolean overwrite) {
         try {
             return cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "resource_type", "auto",
+                    "asset_folder", folder,
                     "public_id", publicId,
                     "overwrite", overwrite,
                     "invalidate", true
@@ -139,12 +153,28 @@ public class MediaAssetService {
         return "audio".equals(mediaType) ? "video" : "image";
     }
 
-    private String buildPublicId(Long testId, String mediaType, String label) {
-        return String.format("%s/tests/%d/%s/%s",
+    private String buildAssetFolder(Long testId, String mediaType) {
+        return String.format("%s/%s/tests/%d/%s",
                 trimSlashes(cloudinaryProperties.getFolderRoot()),
+                trimSlashes(cloudinaryProperties.getFolderEnv()),
                 testId,
-                mediaType,
-                sanitizeLabel(label));
+                cloudinaryFolderName(mediaType));
+    }
+
+    private String buildPublicId(String folder, String label) {
+        return folder + "/" + sanitizeLabel(label);
+    }
+
+    private String cloudinaryFolderName(String mediaType) {
+        return "audio".equals(mediaType) ? "audios" : "images";
+    }
+
+    private String extractFolder(String publicId) {
+        int slashIndex = publicId == null ? -1 : publicId.lastIndexOf('/');
+        if (slashIndex <= 0) {
+            return trimSlashes(cloudinaryProperties.getFolderRoot());
+        }
+        return publicId.substring(0, slashIndex);
     }
 
     private String normalizeMediaType(String mediaType) {

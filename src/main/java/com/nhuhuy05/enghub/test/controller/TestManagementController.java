@@ -58,6 +58,15 @@ public class TestManagementController {
                 .build();
     }
 
+    @GetMapping("/{testId}/media")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<List<MediaAssetResponse>> getMedia(@PathVariable Long testId) {
+        return ApiResponse.<List<MediaAssetResponse>>builder()
+                .result(mediaAssetService.getMedia(testId))
+                .build();
+    }
+
     @PostMapping("/{testId}/parts/init")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))

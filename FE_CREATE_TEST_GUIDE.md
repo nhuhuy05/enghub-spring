@@ -14,6 +14,8 @@ Tất cả API admin/teacher bên dưới đều cần token hợp lệ và role
 ADMIN hoặc TEACHER
 ```
 
+Vì backend cho cả `ADMIN` và `TEACHER`, FE nên mở route/menu tạo đề cho cả hai role nếu admin cũng cần quản trị đề. Nếu product muốn chỉ giáo viên tạo đề thì FE có thể chặn ở UI, nhưng đó là rule UI riêng, không phải rule backend.
+
 Response backend bọc trong `ApiResponse`:
 
 ```json
@@ -31,12 +33,12 @@ FE luôn đọc data từ `response.result`.
 Feature tạo đề gồm 7 bước:
 
 1. Chọn hoặc tạo `test_collection`.
-2. Tạo `test`.
-3. Upload media theo từng file ảnh/audio.
-4. Import Excel câu hỏi và transcript.
-5. Review và chỉnh sửa từng `question_group`.
-6. Preview đề thi.
-7. Public đề thi.
+   2. Tạo `test`.
+   3. Upload media theo từng file ảnh/audio.
+   4. Import Excel câu hỏi và transcript.
+   5. Review và chỉnh sửa từng `question_group`.
+   6. Preview đề thi.
+   7. Public đề thi.
 
 Trạng thái workflow của test:
 
@@ -53,11 +55,11 @@ reviewing
 Backend chỉ cho publish khi:
 
 - Đủ 200 câu hỏi.
-- Mỗi câu có đúng 1 đáp án đúng.
-- Part 1 có ảnh.
-- Part 1-4 có audio hợp lệ.
-- Part 6-7 có passage/ảnh.
-- Tất cả question group đã được mark `reviewed`.
+  - Mỗi câu có đúng 1 đáp án đúng.
+  - Part 1 có ảnh.
+  - Part 1-4 có audio hợp lệ.
+  - Part 6-7 có passage/ảnh.
+  - Tất cả question group đã được mark `reviewed`.
 
 ## 2. Màn Hình Đề Xuất
 
@@ -82,19 +84,19 @@ Right panel: chi tiết group đang chọn
 Danh sách group hiển thị:
 
 - Part.
-- Range câu hỏi, ví dụ `131-134`.
-- Trạng thái `needs_review` hoặc `reviewed`.
-- Missing flags nếu thiếu media/audio/passage/question/answer.
+  - Range câu hỏi, ví dụ `131-134`.
+  - Trạng thái `needs_review` hoặc `reviewed`.
+  - Missing flags nếu thiếu media/audio/passage/question/answer.
 
 Chi tiết group cho phép sửa:
 
 - Ảnh của group.
-- Audio, start/end, transcript.
-- Passage Part 6/7.
-- Câu hỏi.
-- Đáp án.
-- Giải thích tiếng Việt.
-- Mark reviewed.
+  - Audio, start/end, transcript.
+  - Passage Part 6/7.
+  - Câu hỏi.
+  - Đáp án.
+  - Giải thích tiếng Việt.
+  - Mark reviewed.
 
 ## 3. Tạo Collection
 
@@ -152,6 +154,24 @@ Lấy chi tiết test:
 GET /enghub/admin/tests/{testId}
 ```
 
+Response `result` có `workflow_status`, FE có thể dùng để hiển thị trạng thái wizard:
+
+```json
+{
+  "id": 12,
+  "collection_id": 1,
+  "collection_name": "ETS 2024",
+  "test_number": 1,
+  "title": "ETS Test 01",
+  "description": "Full test 200 câu",
+  "total_questions": 200,
+  "duration_minutes": 120,
+  "is_published": false,
+  "workflow_status": "reviewing",
+  "created_at": "2026-05-29T19:30:00"
+}
+```
+
 ## 5. Upload Media
 
 Endpoint upload 1 file:
@@ -170,6 +190,35 @@ type: image | audio
 ```
 
 Có thể gửi `mediaType` thay cho `type` nếu FE đang dùng field đó.
+
+### Cloudinary folder
+
+FE không cần gửi `bucket`, `folder` hoặc `partNumber` khi upload media.
+
+Backend tự lưu Cloudinary theo `type`:
+
+```text
+type=image -> enghub/{env}/tests/{testId}/images/{label}
+type=audio -> enghub/{env}/tests/{testId}/audios/{label}
+```
+
+Ví dụ:
+
+```text
+label = 131-134, type = image
+-> enghub/dev/tests/12/images/131-134
+
+label = p03-q032-034, type = audio
+-> enghub/dev/tests/12/audios/p03-q032-034
+```
+
+FE chỉ cần gửi đúng:
+
+```text
+file
+label
+type hoặc mediaType
+```
 
 ### Rule label quan trọng
 
@@ -210,6 +259,8 @@ Range đơn giản:
 147-148
 176-180
 ```
+
+Lưu ý: label số đơn như `1`, `2`, `3` chỉ nên dùng khi nó chính là `q_number` thật, ví dụ ảnh Part 1 cho câu 1, 2, 3. Không dùng `group_order` làm media label cho Part 3/4, vì Part 3 group 1 thực chất là range câu `32-34`, nên label đúng nên là `32-34` hoặc `p03-q032-034`.
 
 Range có nhiều ảnh:
 
@@ -256,6 +307,43 @@ Part 7:
 ```
 
 FE upload từng file, label tương ứng là tên file bỏ `.png`.
+
+### Lấy danh sách media đã upload
+
+FE dùng endpoint này để load lại media sau refresh, hoặc khi vào `Review Groups` cần chọn media thủ công.
+
+```http
+GET /enghub/admin/tests/{testId}/media
+```
+
+Response `result` là list:
+
+```json
+[
+  {
+    "id": 88,
+    "test_id": 12,
+    "label": "131-134",
+    "media_type": "image",
+    "cloudinary_public_id": "enghub/dev/tests/12/images/131-134",
+    "url": "https://res.cloudinary.com/...",
+    "duration_ms": null,
+    "original_filename": "131-134.png",
+    "created_at": "2026-05-29T19:30:00"
+  },
+  {
+    "id": 89,
+    "test_id": 12,
+    "label": "p03-q032-034",
+    "media_type": "audio",
+    "cloudinary_public_id": "enghub/dev/tests/12/audios/p03-q032-034",
+    "url": "https://res.cloudinary.com/...",
+    "duration_ms": 27000,
+    "original_filename": "p03-q032-034.mp3",
+    "created_at": "2026-05-29T19:31:00"
+  }
+]
+```
 
 ### Update media file
 
@@ -305,11 +393,11 @@ POST /enghub/admin/tests/{testId}/import?replace=true
 Sau khi import thành công, backend sẽ:
 
 - Tạo/cập nhật `question_groups`.
-- Tạo/cập nhật `questions`.
-- Tạo/cập nhật `answers`.
-- Match media đã upload vào group dựa trên `media_assets.label`.
-- Match transcript vào audio group nếu có sheet `transcripts`.
-- Đưa test về workflow status `reviewing`.
+  - Tạo/cập nhật `questions`.
+  - Tạo/cập nhật `answers`.
+  - Match media đã upload vào group dựa trên `media_assets.label`.
+  - Match transcript vào audio group nếu có sheet `transcripts`.
+  - Đưa test về workflow status `reviewing`.
 
 ### Sheet bắt buộc: `questions`
 
@@ -420,10 +508,10 @@ Part 2, chỉ có A/B/C:
 Lưu ý:
 
 - `explanation` hiện tại là tiếng Việt, backend lưu vào `explanation_vi`.
-- Part 1-4 vẫn có thể để trống `question_text` nếu đề gốc không hiện câu hỏi.
-- Part 2 chỉ có 3 đáp án A/B/C thì FE/import file vẫn nên để cột D trống, tùy theo data thực tế.
-- FE nên validate trước khi upload/import: `q_number` không trùng, `part` nằm trong 1-7, `correct` nằm trong A-D, và đáp án đúng không được trỏ tới option đang trống.
-- Sau import, giáo viên vẫn phải qua bước `Review Groups` để check/sửa từng group trước khi publish.
+  - Part 1-4 vẫn có thể để trống `question_text` nếu đề gốc không hiện câu hỏi.
+  - Part 2 chỉ có 3 đáp án A/B/C thì FE/import file vẫn nên để cột D trống, tùy theo data thực tế.
+  - FE nên validate trước khi upload/import: `q_number` không trùng, `part` nằm trong 1-7, `correct` nằm trong A-D, và đáp án đúng không được trỏ tới option đang trống.
+  - Sau import, giáo viên vẫn phải qua bước `Review Groups` để check/sửa từng group trước khi publish.
 
 ### Sheet optional: `transcripts`
 
@@ -502,6 +590,15 @@ missing_question
 missing_answer
 ```
 
+`missing_flags` hiện là `string[]`, chưa có detail theo field/question. FE có thể dùng group id hiện tại để nhảy về đúng group, còn trong group thì highlight theo flag:
+
+| Flag | Ý nghĩa gợi ý |
+| --- | --- |
+| `missing_questions` | Group chưa có câu hỏi |
+| `missing_image` | Part 1 thiếu ảnh |
+| `missing_audio` | Part 1-4 thiếu audio |
+| `missing_passage` | Part 6/7 thiếu passage |
+
 ### Lấy chi tiết 1 group
 
 ```http
@@ -579,6 +676,16 @@ Body:
 ```
 
 API này thay thế toàn bộ images của group.
+
+Nếu gửi:
+
+```json
+{
+  "images": []
+}
+```
+
+Backend sẽ hiểu là xóa hết images của group.
 
 ### Sửa audio
 
@@ -690,6 +797,16 @@ Body với passage dạng text:
 
 API này thay thế toàn bộ passages của group.
 
+Nếu gửi:
+
+```json
+{
+  "passages": []
+}
+```
+
+Backend sẽ hiểu là xóa hết passages của group.
+
 ## 10. Sửa Câu Hỏi Và Đáp Án
 
 ### Sửa câu hỏi
@@ -730,6 +847,8 @@ Body:
 
 Nếu `is_correct = true`, backend tự set các đáp án khác trong cùng câu hỏi thành false.
 
+Backend trả về `QuestionGroupDetailResponse` mới nhất, giống API sửa câu hỏi. FE có thể lấy response này để replace state của group hiện tại, không bắt buộc gọi lại `GET /question-groups/{groupId}` ngay sau đó.
+
 ## 11. Mark Reviewed
 
 Sau khi giáo viên check xong group:
@@ -769,11 +888,48 @@ Dùng để biết đề có publish được không.
 GET /enghub/admin/tests/{testId}/preview
 ```
 
+Response `result`:
+
+```json
+{
+  "test_id": 12,
+  "question_count": 200,
+  "invalid_correct_answer_count": 0,
+  "part1_missing_image_count": 0,
+  "listening_missing_audio_range_count": 0,
+  "reading_missing_passage_count": 0,
+  "publishable": true,
+  "errors": []
+}
+```
+
+Ví dụ khi chưa hợp lệ:
+
+```json
+{
+  "test_id": 12,
+  "question_count": 198,
+  "invalid_correct_answer_count": 2,
+  "part1_missing_image_count": 1,
+  "listening_missing_audio_range_count": 3,
+  "reading_missing_passage_count": 1,
+  "publishable": false,
+  "errors": [
+    "Test must have exactly 200 questions, current count is 198",
+    "2 questions do not have exactly one correct answer",
+    "Part 1 still has 1 groups without an image",
+    "Part 1-4 still has 3 groups without a valid audio range",
+    "Part 6-7 still has 1 groups without passage content",
+    "5 question groups have not been reviewed"
+  ]
+}
+```
+
 Response gồm checklist. FE nên dùng API này để:
 
 - Hiện danh sách lỗi cần sửa.
-- Disable nút publish nếu chưa hợp lệ.
-- Điều hướng người dùng về group cần sửa.
+  - Disable nút publish nếu chưa hợp lệ.
+  - Điều hướng người dùng về group cần sửa.
 
 ### Preview content
 
@@ -806,10 +962,10 @@ Mỗi `group` trong `parts[].groups` có cùng shape với `QuestionGroupDetailR
 FE preview nên render:
 
 - Audio player cho Part 1-4.
-- Ảnh Part 1 nếu có.
-- Transcript chỉ hiện trong chế độ giáo viên, không cần hiện cho học viên nếu đang preview như bài thi thật.
-- Passage/ảnh Part 6-7.
-- Câu hỏi, đáp án, bản dịch, giải thích.
+  - Ảnh Part 1 nếu có.
+  - Transcript chỉ hiện trong chế độ giáo viên, không cần hiện cho học viên nếu đang preview như bài thi thật.
+  - Passage/ảnh Part 6-7.
+  - Câu hỏi, đáp án, bản dịch, giải thích.
 
 Nếu giáo viên thấy sai:
 
@@ -845,9 +1001,9 @@ Filename | Label | Type | Status | Preview | Actions
 Trong lúc upload nhiều file:
 
 - Upload từng file.
-- Hiện progress từng file.
-- Nếu file fail, cho retry file đó.
-- Cho sửa label trước khi import Excel.
+  - Hiện progress từng file.
+  - Nếu file fail, cho retry file đó.
+  - Cho sửa label trước khi import Excel.
 
 ### Import Excel
 
@@ -856,8 +1012,8 @@ Sau khi import thành công, FE nên chuyển sang `Review Groups`.
 Nếu import fail:
 
 - Hiện message lỗi.
-- Hiện tên sheet/cột/row nếu backend trả về.
-- Không publish.
+  - Hiện tên sheet/cột/row nếu backend trả về.
+  - Không publish.
 
 ### Review Groups
 
@@ -903,42 +1059,42 @@ với:
 Nút publish chỉ nên enable khi:
 
 - API `/preview` báo hợp lệ.
-- Không còn group `needs_review`.
+  - Không còn group `needs_review`.
 
 ## 15. Quy Tắc Render Theo Part
 
 Part 1:
 
 - Mỗi group thường là 1 câu.
-- Cần ảnh trong `images`.
-- Cần audio trong `audio`.
-- Câu hỏi có thể rỗng hoặc có text tùy data.
+  - Cần ảnh trong `images`.
+  - Cần audio trong `audio`.
+  - Câu hỏi có thể rỗng hoặc có text tùy data.
 
 Part 2:
 
 - Mỗi group thường là 1 câu.
-- Cần audio.
-- Thường không có ảnh/passage.
-- Có thể chỉ có A/B/C.
+  - Cần audio.
+  - Thường không có ảnh/passage.
+  - Có thể chỉ có A/B/C.
 
 Part 3/4:
 
 - Mỗi group gồm nhiều câu.
-- Cần audio.
-- Có thể có image/graphic nếu đề có biểu đồ, lịch, bảng.
-- Transcript nằm trong `audio.transcript_en` và `audio.transcript_vi`.
+  - Cần audio.
+  - Có thể có image/graphic nếu đề có biểu đồ, lịch, bảng.
+  - Transcript nằm trong `audio.transcript_en` và `audio.transcript_vi`.
 
 Part 5:
 
 - Không cần media.
-- Render câu hỏi và đáp án.
+  - Render câu hỏi và đáp án.
 
 Part 6/7:
 
 - Mỗi group gồm nhiều câu.
-- Cần passage.
-- Passage có thể là ảnh hoặc text.
-- Nếu một passage có nhiều ảnh, render theo `order_index`.
+  - Cần passage.
+  - Passage có thể là ảnh hoặc text.
+  - Nếu một passage có nhiều ảnh, render theo `order_index`.
 
 ## 16. Lỗi Thường Gặp FE Cần Bắt
 
@@ -979,15 +1135,15 @@ Chỉ cần set đáp án mới is_correct=true, backend tự unset đáp án c�
 FE được xem là hoàn thành feature khi có đủ các phần:
 
 - Tạo/chọn collection.
-- Tạo test.
-- Upload image/audio lẻ từng file.
-- Tự lấy label từ filename bỏ extension.
-- Import Excel sheet `questions`.
-- Import optional sheet `transcripts`.
-- Xem danh sách question groups.
-- Sửa image/audio/transcript/passage/question/answer theo group.
-- Mark reviewed/needs_review.
-- Render preview content.
-- Gọi preview validation.
-- Publish khi hợp lệ.
-- Hiện lỗi rõ ràng khi backend validate fail.
+  - Tạo test.
+  - Upload image/audio lẻ từng file.
+  - Tự lấy label từ filename bỏ extension.
+  - Import Excel sheet `questions`.
+  - Import optional sheet `transcripts`.
+  - Xem danh sách question groups.
+  - Sửa image/audio/transcript/passage/question/answer theo group.
+  - Mark reviewed/needs_review.
+  - Render preview content.
+  - Gọi preview validation.
+  - Publish khi hợp lệ.
+  - Hiện lỗi rõ ràng khi backend validate fail.

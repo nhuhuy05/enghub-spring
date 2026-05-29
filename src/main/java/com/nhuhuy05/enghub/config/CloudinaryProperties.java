@@ -10,4 +10,5 @@ public class CloudinaryProperties {
     String apiKey;
     String apiSecret;
     String folderRoot = "enghub";
+    String folderEnv = "dev";
 }

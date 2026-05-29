@@ -156,6 +156,7 @@ public class TestManagementService {
                 .totalQuestions(test.getTotalQuestions())
                 .durationMinutes(test.getDurationMinutes())
                 .published(test.getPublished())
+                .workflowStatus(test.getWorkflowStatus())
                 .createdAt(test.getCreatedAt())
                 .build();
     }

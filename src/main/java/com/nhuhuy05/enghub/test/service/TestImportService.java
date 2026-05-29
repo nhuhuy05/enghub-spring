@@ -426,16 +426,17 @@ public class TestImportService {
     }
 
     private void validateOptions(QuestionRow row, List<ImportErrorResponse> errors) {
-        if (isBlank(row.optionA())) {
+        boolean canHaveBlankOptions = row.part() != null && (row.part() == 1 || row.part() == 2);
+        if (!canHaveBlankOptions && isBlank(row.optionA())) {
             errors.add(error(row.rowNumber(), "option_a", "option_a is required"));
         }
-        if (isBlank(row.optionB())) {
+        if (!canHaveBlankOptions && isBlank(row.optionB())) {
             errors.add(error(row.rowNumber(), "option_b", "option_b is required"));
         }
-        if (isBlank(row.optionC())) {
+        if (!canHaveBlankOptions && isBlank(row.optionC())) {
             errors.add(error(row.rowNumber(), "option_c", "option_c is required"));
         }
-        if (row.part() != null && row.part() != 2 && isBlank(row.optionD())) {
+        if (row.part() != null && row.part() != 1 && row.part() != 2 && isBlank(row.optionD())) {
             errors.add(error(row.rowNumber(), "option_d", "option_d is required for this part"));
         }
         if (isBlank(row.correct())) {
@@ -612,7 +613,6 @@ public class TestImportService {
         List<String> labels = new ArrayList<>();
         labels.add(canonicalLabel(key.part(), start, end));
         labels.add(plainRangeLabel(start, end));
-        labels.add(String.valueOf(key.groupOrder()));
         return labels;
     }
 
@@ -699,7 +699,7 @@ public class TestImportService {
     private Answer answer(Question question, String textEn, String textVi, boolean correct) {
         return Answer.builder()
                 .question(question)
-                .answerTextEn(textEn)
+                .answerTextEn(textEn == null ? "" : textEn)
                 .answerTextVi(textVi)
                 .isCorrect(correct)
                 .build();
