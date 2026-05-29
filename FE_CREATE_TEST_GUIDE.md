@@ -988,6 +988,33 @@ tests.is_published = true
 tests.workflow_status = published
 ```
 
+### Unpublish
+
+Dùng khi đề đã public nhưng cần ẩn khỏi phía học viên để sửa lại hoặc xử lý lỗi.
+
+```http
+PATCH /enghub/admin/tests/{testId}/unpublish
+```
+
+Response `result`:
+
+```json
+{
+  "success": true,
+  "is_published": false,
+  "errors": []
+}
+```
+
+Khi thành công:
+
+```text
+tests.is_published = false
+tests.workflow_status = reviewing
+```
+
+Unpublish không xóa câu hỏi, media, attempts cũ hoặc dữ liệu review. Nó chỉ ẩn test khỏi trạng thái published để giáo viên/admin có thể chỉnh sửa rồi preview/publish lại.
+
 ## 14. Gợi Ý UX Cho FE
 
 ### Upload media

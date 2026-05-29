@@ -175,4 +175,13 @@ public class TestManagementController {
                 .result(testWorkflowService.publish(testId))
                 .build();
     }
+
+    @PatchMapping("/{testId}/unpublish")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<PublishResponse> unpublish(@PathVariable Long testId) {
+        return ApiResponse.<PublishResponse>builder()
+                .result(testWorkflowService.unpublish(testId))
+                .build();
+    }
 }

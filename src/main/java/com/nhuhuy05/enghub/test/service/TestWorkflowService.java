@@ -78,6 +78,22 @@ public class TestWorkflowService {
                 .build();
     }
 
+    @Transactional
+    public PublishResponse unpublish(Long testId) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
+
+        test.setPublished(false);
+        test.setWorkflowStatus("reviewing");
+        testRepository.save(test);
+
+        return PublishResponse.builder()
+                .success(true)
+                .published(false)
+                .errors(List.of())
+                .build();
+    }
+
     private AudioRangeResponse updateAudioRange(Long testId, AudioRangeUpdateRequest request) {
         if (request.getEndMs() != null && request.getEndMs() <= request.getStartMs()) {
             throw new AppException(ErrorCode.INVALID_KEY);
