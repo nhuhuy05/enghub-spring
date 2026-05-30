@@ -272,6 +272,33 @@ Range có nhiều ảnh:
 181-185(3)
 ```
 
+Part 6/7 có thể thêm title passage vào filename bằng suffix sau `_`:
+
+```text
+{start}-{end}({page})_{title}
+```
+
+Ví dụ:
+
+```text
+191-195(1)_invitation-webpage
+191-195(2)_email
+176-180(1)_webpage
+176-180(2)_order-form
+```
+
+Backend vẫn match group theo phần `start-end(page)`, còn phần sau `_` được dùng làm `question_group_passages.title`.
+
+Rule title:
+
+```text
+lowercase
+không dấu
+nối từ bằng dấu -
+không dùng space
+không dùng _ trong title
+```
+
 Audio chung tạm thời:
 
 ```text
@@ -474,13 +501,13 @@ Ví dụ Part 7 có một passage nhiều ảnh:
 
 | part | group_order | q_number | Media label có thể match |
 | --- | --- | --- | --- |
-| 7 | 8 | 176 | `176-180(1)`, `176-180(2)` |
-| 7 | 8 | 177 | `176-180(1)`, `176-180(2)` |
-| 7 | 8 | 178 | `176-180(1)`, `176-180(2)` |
-| 7 | 8 | 179 | `176-180(1)`, `176-180(2)` |
-| 7 | 8 | 180 | `176-180(1)`, `176-180(2)` |
+| 7 | 8 | 176 | `176-180(1)_webpage`, `176-180(2)_email` |
+| 7 | 8 | 177 | `176-180(1)_webpage`, `176-180(2)_email` |
+| 7 | 8 | 178 | `176-180(1)_webpage`, `176-180(2)_email` |
+| 7 | 8 | 179 | `176-180(1)_webpage`, `176-180(2)_email` |
+| 7 | 8 | 180 | `176-180(1)_webpage`, `176-180(2)_email` |
 
-Các file `176-180(1).png` và `176-180(2).png` sẽ được lưu thành nhiều passage image trong cùng group, sắp xếp theo hậu tố `(1)`, `(2)`.
+Các file `176-180(1)_webpage.png` và `176-180(2)_email.png` sẽ được lưu thành nhiều passage image trong cùng group, sắp xếp theo hậu tố `(1)`, `(2)`. Title tự sinh lần lượt là `webpage` và `email`, giáo viên có thể sửa lại ở bước Review Groups.
 
 ### Ví dụ dòng dữ liệu sheet `questions`
 

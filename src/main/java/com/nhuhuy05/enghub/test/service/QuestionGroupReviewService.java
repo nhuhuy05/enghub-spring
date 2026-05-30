@@ -112,6 +112,7 @@ public class QuestionGroupReviewService {
         Long testId = questionGroup.getTestPart().getTest().getId();
 
         questionGroupImageRepository.deleteAllByQuestionGroupId(groupId);
+        questionGroupImageRepository.flush();
         int fallbackOrder = 0;
         for (QuestionGroupImagesUpdateRequest.Item item : request.getImages()) {
             MediaAsset media = resolveMedia(testId, item.getMediaAssetId(), "image");
@@ -178,6 +179,7 @@ public class QuestionGroupReviewService {
         Long testId = questionGroup.getTestPart().getTest().getId();
 
         questionGroupPassageRepository.deleteAllByQuestionGroupId(groupId);
+        questionGroupPassageRepository.flush();
         int fallbackOrder = 0;
         for (QuestionGroupPassagesUpdateRequest.Item item : request.getPassages()) {
             MediaAsset media = item.getMediaAssetId() == null ? null : resolveMedia(testId, item.getMediaAssetId(), "image");

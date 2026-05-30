@@ -563,6 +563,22 @@ public class TestImportService {
                 .findFirst();
     }
 
+    private Optional<MediaAsset> findPageMedia(Long testId, List<String> labels) {
+        Optional<MediaAsset> exactMatch = findMedia(testId, "image", labels);
+        if (exactMatch.isPresent()) {
+            return exactMatch;
+        }
+
+        return labels.stream()
+                .filter(label -> label != null && !label.isBlank())
+                .map(label -> label + "_")
+                .distinct()
+                .map(prefix -> mediaAssetRepository
+                        .findFirstByTestIdAndMediaTypeAndLabelStartingWithOrderByLabelAsc(testId, "image", prefix))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
     private void persistGroupImage(QuestionGroup questionGroup, MediaAsset mediaAsset, int orderIndex) {
         questionGroupImageRepository.save(QuestionGroupImage.builder()
                 .questionGroup(questionGroup)
@@ -576,7 +592,7 @@ public class TestImportService {
 
         List<MediaAsset> pageImages = new ArrayList<>();
         for (int page = 1; page <= 20; page++) {
-            Optional<MediaAsset> pageImage = findMedia(testId, "image", pageLabelCandidates(baseLabels, page));
+            Optional<MediaAsset> pageImage = findPageMedia(testId, pageLabelCandidates(baseLabels, page));
             if (pageImage.isEmpty()) {
                 break;
             }
@@ -591,7 +607,7 @@ public class TestImportService {
             MediaAsset image = pageImages.get(index);
             questionGroupPassageRepository.save(QuestionGroupPassage.builder()
                     .questionGroup(questionGroup)
-                    .title(image.getLabel())
+                    .title(extractPassageTitle(image.getLabel()))
                     .passageType("image")
                     .contentFormat("image")
                     .mediaAsset(image)
@@ -638,6 +654,27 @@ public class TestImportService {
             return String.valueOf(start);
         }
         return start + "-" + end;
+    }
+
+    private String extractPassageTitle(String label) {
+        if (label == null || label.isBlank()) {
+            return label;
+        }
+
+        int titleStart = label.indexOf('_');
+        if (titleStart < 0 || titleStart == label.length() - 1) {
+            return label;
+        }
+
+        String title = label.substring(titleStart + 1)
+                .replace('-', ' ')
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (title.isEmpty()) {
+            return label;
+        }
+
+        return title;
     }
 
     private void clearImportedContent(Long testId) {

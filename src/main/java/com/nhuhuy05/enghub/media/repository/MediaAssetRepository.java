@@ -13,6 +13,12 @@ public interface MediaAssetRepository extends JpaRepository<MediaAsset, Long> {
 
     Optional<MediaAsset> findByTestIdAndLabelAndMediaType(Long testId, String label, String mediaType);
 
+    Optional<MediaAsset> findFirstByTestIdAndMediaTypeAndLabelStartingWithOrderByLabelAsc(
+            Long testId,
+            String mediaType,
+            String labelPrefix
+    );
+
     Optional<MediaAsset> findByIdAndTestId(Long id, Long testId);
 
     List<MediaAsset> findAllByTestIdOrderByCreatedAtAsc(Long testId);
