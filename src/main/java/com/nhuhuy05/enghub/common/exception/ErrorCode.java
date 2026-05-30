@@ -35,6 +35,15 @@ public enum ErrorCode {
     PASSAGE_NOT_EXISTED(1026, "Passage not existed", HttpStatus.NOT_FOUND),
     FILE_TOO_LARGE(1027, "Uploaded file is too large", HttpStatus.PAYLOAD_TOO_LARGE),
     MEDIA_ASSET_IN_USE(1028, "Media asset is being used", HttpStatus.BAD_REQUEST),
+    GEMINI_DISABLED(1029, "Gemini integration is disabled", HttpStatus.BAD_REQUEST),
+    GEMINI_API_KEY_MISSING(1030, "Gemini API key is missing", HttpStatus.BAD_REQUEST),
+    GEMINI_UPLOAD_FAILED(1031, "Gemini file upload failed", HttpStatus.BAD_REQUEST),
+    GEMINI_GENERATION_FAILED(1032, "Gemini generation failed", HttpStatus.BAD_REQUEST),
+    GEMINI_INVALID_RESPONSE(1033, "Gemini response is invalid", HttpStatus.BAD_REQUEST),
+    AI_AUDIO_NOT_EXISTED(1034, "Question group audio not existed", HttpStatus.BAD_REQUEST),
+    AUDIO_DOWNLOAD_FAILED(1035, "Audio download failed", HttpStatus.BAD_REQUEST),
+    VISUAL_DOWNLOAD_FAILED(1036, "Visual media download failed", HttpStatus.BAD_REQUEST),
+    AI_MISSING_REQUIRED_CONTEXT(1037, "AI generation is missing required context", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

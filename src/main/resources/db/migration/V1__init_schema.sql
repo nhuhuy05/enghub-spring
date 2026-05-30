@@ -1,4 +1,4 @@
-z-- V1__init_schema.sql
+-- V1__init_schema.sql
 -- PostgreSQL schema for EngHub TOEIC backend
 -- Generated from the current ERD.
 -- Place this file at: src/main/resources/db/migration/V1__init_schema.sql

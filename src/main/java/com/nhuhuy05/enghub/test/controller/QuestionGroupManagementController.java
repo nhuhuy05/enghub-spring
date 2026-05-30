@@ -1,6 +1,8 @@
 package com.nhuhuy05.enghub.test.controller;
 
 import com.nhuhuy05.enghub.common.response.ApiResponse;
+import com.nhuhuy05.enghub.ai.dto.AiGenerationRequest;
+import com.nhuhuy05.enghub.ai.service.QuestionGroupAiService;
 import com.nhuhuy05.enghub.test.dto.*;
 import com.nhuhuy05.enghub.test.service.QuestionGroupReviewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class QuestionGroupManagementController {
     QuestionGroupReviewService questionGroupReviewService;
+    QuestionGroupAiService questionGroupAiService;
 
     @GetMapping("/question-groups/{groupId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
@@ -75,6 +78,45 @@ public class QuestionGroupManagementController {
     ) {
         return ApiResponse.<QuestionGroupDetailResponse>builder()
                 .result(questionGroupReviewService.updateTranscript(groupId, request))
+                .build();
+    }
+
+    @PostMapping("/question-groups/{groupId}/generate-transcript")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<QuestionGroupDetailResponse> generateTranscript(@PathVariable Long groupId) {
+        return ApiResponse.<QuestionGroupDetailResponse>builder()
+                .result(questionGroupAiService.generateTranscript(groupId))
+                .build();
+    }
+
+    @PostMapping("/question-groups/{groupId}/generate-question-translation")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<QuestionGroupDetailResponse> generateQuestionTranslation(@PathVariable Long groupId) {
+        return ApiResponse.<QuestionGroupDetailResponse>builder()
+                .result(questionGroupAiService.generateQuestionTranslation(groupId))
+                .build();
+    }
+
+    @PostMapping("/question-groups/{groupId}/generate-explanations")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<QuestionGroupDetailResponse> generateExplanations(@PathVariable Long groupId) {
+        return ApiResponse.<QuestionGroupDetailResponse>builder()
+                .result(questionGroupAiService.generateExplanations(groupId))
+                .build();
+    }
+
+    @PostMapping("/question-groups/{groupId}/generate-ai-support")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<QuestionGroupDetailResponse> generateAiSupport(
+            @PathVariable Long groupId,
+            @RequestBody(required = false) AiGenerationRequest request
+    ) {
+        return ApiResponse.<QuestionGroupDetailResponse>builder()
+                .result(questionGroupAiService.generateAiSupport(groupId, request))
                 .build();
     }
 

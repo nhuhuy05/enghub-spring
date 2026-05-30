@@ -459,11 +459,11 @@ explanation
 | `q_number` | Có | Number | Tất cả part | Lưu số thứ tự câu hỏi thật trong đề | Nên chạy từ `1` đến `200`, không trùng |
 | `question_text` | Có theo header, nội dung có thể trống | Text | Tất cả part | Lưu câu hỏi tiếng Anh vào `questions.question_text_en` | Part 1-4 có thể để trống nếu đề gốc không hiện text câu hỏi |
 | `question_text_vi` | Không | Text | Tất cả part | Lưu bản dịch câu hỏi vào `questions.question_text_vi` | FE nên cho giáo viên sửa lại ở bước review |
-| `option_a` | Có | Text | Tất cả part | Tạo answer label `A`, lưu vào `answers.answer_text_en` | Part 2 thường vẫn có A/B/C |
+| `option_a` | Có theo header, nội dung có thể trống | Text | Tất cả part | Tạo answer label `A`, lưu vào `answers.answer_text_en` | Part 1/2 có thể để trống vì đáp án được đọc trong audio và có thể được AI fill sau khi gen transcript |
 | `option_a_vi` | Không | Text | Tất cả part | Lưu bản dịch đáp án A vào `answers.answer_text_vi` | Có thể để trống và bổ sung sau |
-| `option_b` | Có | Text | Tất cả part | Tạo answer label `B`, lưu vào `answers.answer_text_en` |  |
+| `option_b` | Có theo header, nội dung có thể trống | Text | Tất cả part | Tạo answer label `B`, lưu vào `answers.answer_text_en` | Part 1/2 có thể để trống |
 | `option_b_vi` | Không | Text | Tất cả part | Lưu bản dịch đáp án B vào `answers.answer_text_vi` |  |
-| `option_c` | Có | Text | Tất cả part | Tạo answer label `C`, lưu vào `answers.answer_text_en` |  |
+| `option_c` | Có theo header, nội dung có thể trống | Text | Tất cả part | Tạo answer label `C`, lưu vào `answers.answer_text_en` | Part 1/2 có thể để trống |
 | `option_c_vi` | Không | Text | Tất cả part | Lưu bản dịch đáp án C vào `answers.answer_text_vi` |  |
 | `option_d` | Có theo header, nội dung có thể trống | Text | Part 1, 3, 4, 5, 6, 7 | Tạo answer label `D`, lưu vào `answers.answer_text_en` | Part 2 có thể để trống nếu chỉ có A/B/C |
 | `option_d_vi` | Không | Text | Part 1, 3, 4, 5, 6, 7 | Lưu bản dịch đáp án D vào `answers.answer_text_vi` | Nếu `option_d` trống thì `option_d_vi` cũng nên trống |
@@ -526,17 +526,18 @@ Part 6, nhiều câu chung một passage:
 | 6 | 1 | 133 | Question 133 | B |
 | 6 | 1 | 134 | Question 134 | D |
 
-Part 2, chỉ có A/B/C:
+Part 2, nếu chưa có nội dung đáp án in trong đề thì có thể để trống A/B/C/D và chỉ nhập đáp án đúng:
 
 | part | group_order | q_number | option_a | option_b | option_c | option_d | correct |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2 | 3 | 9 | In the lobby. | At 3 p.m. | Yes, I did. |  | A |
+| 2 | 3 | 9 |  |  |  |  | A |
 
 Lưu ý:
 
 - `explanation` hiện tại là tiếng Việt, backend lưu vào `explanation_vi`.
   - Part 1-4 vẫn có thể để trống `question_text` nếu đề gốc không hiện câu hỏi.
-  - Part 2 chỉ có 3 đáp án A/B/C thì FE/import file vẫn nên để cột D trống, tùy theo data thực tế.
+  - Part 1/2 có thể để trống `option_a/b/c/d`; sau khi gen transcript, backend có thể fill `answer_text_en/vi` từ audio.
+  - Part 2 chỉ có 3 đáp án A/B/C thì FE/import file vẫn nên để cột D trống.
   - FE nên validate trước khi upload/import: `q_number` không trùng, `part` nằm trong 1-7, `correct` nằm trong A-D, và đáp án đúng không được trỏ tới option đang trống.
   - Sau import, giáo viên vẫn phải qua bước `Review Groups` để check/sửa từng group trước khi publish.
 
@@ -766,6 +767,136 @@ Body:
   "transcript_vi": "Người nói A: ..."
 }
 ```
+
+### Generate AI support
+
+Các API này dùng ở màn `Review Groups`. Backend gọi Gemini, lưu kết quả vào DB, đánh dấu group về `needs_review`, rồi trả về `QuestionGroupDetailResponse` mới nhất.
+
+Hiện tại backend **không còn API generate toàn bộ test**. FE chỉ cần hỗ trợ:
+
+- gen lẻ 3 phần
+  - gen cả 1 group
+
+#### Gen lẻ từng phần
+
+Gen lẻ luôn ghi đè field tương ứng. FE nên confirm trước khi gọi vì nội dung giáo viên đã sửa có thể bị thay thế.
+
+Generate transcript audio:
+
+```http
+POST /enghub/admin/question-groups/{groupId}/generate-transcript
+Content-Type: application/json
+```
+
+Không cần body. Backend yêu cầu group đã có `audio.media_asset_id`.
+
+Kết quả lưu vào:
+
+| Field | Nơi lưu |
+| --- | --- |
+| `transcript_en` | `question_group_audios.transcript_en` |
+| `transcript_vi` | `question_group_audios.transcript_vi` |
+| `answer_text_en` | `answers.answer_text_en`, chỉ Part 1/2 |
+| `answer_text_vi` | `answers.answer_text_vi`, chỉ Part 1/2 |
+
+Với Part 1/2, audio có chứa nội dung đáp án. Khi gọi API này:
+
+- Part 1: backend yêu cầu Gemini tách đáp án `A/B/C/D`.
+  - Part 2: backend yêu cầu Gemini tách đáp án `A/B/C`.
+  - Backend chỉ cập nhật text đáp án, không đổi `is_correct`.
+  - Response là `QuestionGroupDetailResponse` mới nhất, FE nên dùng response này để replace state group hiện tại.
+
+Generate bản dịch câu hỏi/đáp án:
+
+```http
+POST /enghub/admin/question-groups/{groupId}/generate-question-translation
+Content-Type: application/json
+```
+
+Không cần body.
+
+Kết quả lưu vào:
+
+| Field | Nơi lưu |
+| --- | --- |
+| `question_text_vi` | `questions.question_text_vi` |
+| `answer_text_vi` | `answers.answer_text_vi` |
+
+Generate giải thích tiếng Việt:
+
+```http
+POST /enghub/admin/question-groups/{groupId}/generate-explanations
+Content-Type: application/json
+```
+
+Không cần body.
+
+Kết quả lưu vào:
+
+| Field | Nơi lưu |
+| --- | --- |
+| `explanation_vi` | `questions.explanation_vi` |
+
+Backend tự gửi kèm visual media đã match vào group khi gọi Gemini:
+
+| Media | Nguồn |
+| --- | --- |
+| Part 1 image | `question_group_images` |
+| Part 3/4 graphic | `question_group_images` |
+| Part 6/7 passage image | `question_group_passages.media_asset` |
+
+FE không cần gửi image/audio URL trong request generate explanation.
+
+`generate-explanations` yêu cầu đủ context:
+
+| Part | Context cần có |
+| --- | --- |
+| 1 | transcript + image + answer text + correct answer |
+| 2 | transcript + answer text + correct answer |
+| 3/4 | transcript + correct answer, thêm image nếu group có graphic |
+| 5 | question text + answers + correct answer |
+| 6/7 | passage text hoặc passage image + answers + correct answer |
+
+Nếu thiếu context, backend trả `AI_MISSING_REQUIRED_CONTEXT`. Ví dụ muốn gen explanation cho Part 1/2 thì nên gen transcript trước để backend có transcript và answer text.
+
+#### Gen cả group
+
+```http
+POST /enghub/admin/question-groups/{groupId}/generate-ai-support
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "transcript": true,
+  "question_translation": true,
+  "explanation": true,
+  "overwrite": false
+}
+```
+
+Quy tắc:
+
+| Field | Ý nghĩa |
+| --- | --- |
+| `transcript` | Có gen transcript không |
+| `question_translation` | Có gen dịch câu hỏi/đáp án không |
+| `explanation` | Có gen giải thích không |
+| `overwrite` | `false` chỉ fill field trống, `true` ghi đè |
+
+Backend luôn chạy theo thứ tự:
+
+```text
+transcript -> question_translation -> explanation
+```
+
+Với Part 1/2, bước `transcript` sẽ fill `answer_text_en/vi` trước, sau đó bước `question_translation` và `explanation` dùng dữ liệu này.
+
+Response là `QuestionGroupDetailResponse`.
+
+AI chỉ tạo bản nháp. Giáo viên vẫn phải review/sửa thủ công và mark reviewed trước khi preview/publish.
 
 ## 9. Sửa Passage Part 6/7
 
@@ -1123,6 +1254,8 @@ Part 1:
   - Cần ảnh trong `images`.
   - Cần audio trong `audio`.
   - Câu hỏi có thể rỗng hoặc có text tùy data.
+  - Khi người học đang làm bài, FE chỉ render các lựa chọn dạng label `(A) (B) (C) (D)`, không hiện nội dung đáp án.
+  - Khi giáo viên review hoặc người học xem kết quả sau nộp bài, FE có thể hiện `answer_text_en` và `answer_text_vi` nếu backend đã có dữ liệu.
 
 Part 2:
 
@@ -1130,6 +1263,8 @@ Part 2:
   - Cần audio.
   - Thường không có ảnh/passage.
   - Có thể chỉ có A/B/C.
+  - Khi người học đang làm bài, FE chỉ render `(A) (B) (C)`.
+  - Khi review/kết quả sau nộp bài, FE có thể hiện nội dung đáp án và bản dịch nếu đã được nhập hoặc gen từ transcript.
 
 Part 3/4:
 
