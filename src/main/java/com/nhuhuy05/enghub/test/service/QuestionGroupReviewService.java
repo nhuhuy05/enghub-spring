@@ -30,12 +30,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class QuestionGroupReviewService {
+    private static final Pattern SPEAKER_LABEL_PATTERN = Pattern.compile(
+            "[ \\t]+(?=(?:[A-Z][A-Za-z0-9]*(?:[- ][A-Z]?[A-Za-z0-9]+){0,3}|M-[A-Za-z]+|W-[A-Za-z]+):\\s)"
+    );
+    private static final Pattern TOEIC_DIRECTION_LINE_PATTERN = Pattern.compile(
+            "(?im)^\\s*(?:Number\\s+\\d+\\.?|Questions?\\s+\\d+(?:\\s*(?:-|through|to)\\s*\\d+)?\\s+refer\\s+to\\s+the\\s+following\\s+.*\\.?|Look\\s+at\\s+the\\s+picture\\s+.*test\\s+book\\.?)\\s*$"
+    );
+    private static final Pattern TOEIC_DIRECTION_PREFIX_PATTERN = Pattern.compile(
+            "(?i)^\\s*(?:Number\\s+\\d+\\.\\s*|Questions?\\s+\\d+(?:\\s*(?:-|through|to)\\s*\\d+)?\\s+refer\\s+to\\s+the\\s+following\\s+[^.]*\\.\\s*|Look\\s+at\\s+the\\s+picture\\s+[^.]*\\.\\s*)+"
+    );
+
     TestRepository testRepository;
     TestPartRepository testPartRepository;
     QuestionGroupRepository questionGroupRepository;
@@ -290,8 +301,8 @@ public class QuestionGroupReviewService {
                         .url(audio.getMediaAsset().getUrl())
                         .startMs(audio.getStartMs())
                         .endMs(audio.getEndMs())
-                        .transcriptEn(audio.getTranscriptEn())
-                        .transcriptVi(audio.getTranscriptVi())
+                        .transcriptEn(normalizeSpeakerLines(audio.getTranscriptEn()))
+                        .transcriptVi(normalizeSpeakerLines(audio.getTranscriptVi()))
                         .build())
                 .orElse(null);
     }
@@ -400,5 +411,22 @@ public class QuestionGroupReviewService {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
         return normalized;
+    }
+
+    private String normalizeSpeakerLines(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .trim()
+                .replaceAll("[ \\t]*\\n+[ \\t]*", "\n");
+        normalized = TOEIC_DIRECTION_LINE_PATTERN.matcher(normalized).replaceAll("");
+        normalized = TOEIC_DIRECTION_PREFIX_PATTERN.matcher(normalized).replaceAll("");
+        normalized = normalized
+                .replaceAll("[ \\t]*\\n+[ \\t]*", "\n")
+                .trim();
+        return SPEAKER_LABEL_PATTERN.matcher(normalized).replaceAll("\n").trim();
     }
 }

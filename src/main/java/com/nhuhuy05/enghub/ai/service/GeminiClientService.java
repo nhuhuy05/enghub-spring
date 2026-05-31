@@ -296,26 +296,32 @@ public class GeminiClientService {
     }
 
     private String transcriptPrompt(int partNumber) {
-        String answerRule = switch (partNumber) {
+        String partRule = switch (partNumber) {
             case 1 -> """
-                    - This is TOEIC Part 1. Extract the four spoken answer choices A, B, C, D into answers.
-                    - Each answer_text_en must contain only the spoken statement for that label, without "(A)" prefix.
-                    - Each answer_text_vi must be the Vietnamese translation of that statement.
+                    - Part 1: transcript contains only choices A-D, one choice per line.
+                    - Remove question numbers and test-book directions such as "Number ..." or "Look at the picture ...".
+                    - Keep choice labels in transcript, for example: A. ...
+                    - Extract A-D into answers; answer_text_* has no A/B/C/D prefix.
                     """;
             case 2 -> """
-                    - This is TOEIC Part 2. Extract the three spoken answer choices A, B, C into answers.
-                    - Each answer_text_en must contain only the spoken response for that label, without "(A)" prefix.
-                    - Each answer_text_vi must be the Vietnamese translation of that response.
+                    - Part 2: transcript contains the question and choices A-C, each statement on its own line.
+                    - Remove question numbers such as "Number 12.".
+                    - Do not prefix a single-speaker line with "Speaker:".
+                    - Keep choice labels in transcript, for example: A. ...
+                    - Extract A-C into answers; answer_text_* has no A/B/C prefix.
                     """;
             default -> """
-                    - This is not TOEIC Part 1 or Part 2. Return an empty answers array.
+                    - Part 3/4: use one line per speaker turn.
+                    - Remove question-range directions such as "Question 65 through 67 refer to ...".
+                    - Keep real speaker names/roles when heard, such as Man, Woman, Captain, Sabine, Amina.
+                    - Never use generic labels like Speaker, Speaker 1, or Speaker 2.
+                    - If there is only one speaker, do not add a speaker label.
+                    - Return an empty answers array.
                     """;
         };
 
         return """
-                You are helping create a TOEIC listening test.
-
-                Generate a transcript from this audio and translate it into Vietnamese.
+                Transcribe this TOEIC audio and translate it to Vietnamese.
 
                 Return JSON only:
                 {
@@ -331,12 +337,13 @@ public class GeminiClientService {
                 }
 
                 Rules:
-                - Do not invent content that is not in the audio.
-                - Keep speaker labels if there are multiple speakers.
+                - Do not invent missing content.
+                - Never include TOEIC directions, question numbers, or question-range intro text.
+                - Use \\n inside transcript strings for line breaks.
+                - Translate transcript_vi line-by-line with the same labels and line count as transcript_en.
                 - Use natural Vietnamese.
-                - If part of the audio is unclear, write [unclear] for that part.
-                - If an answer choice is unclear, keep the label and write [unclear] for that answer text.
-                """ + answerRule;
+                - Write [unclear] only where audio is unclear.
+                """ + partRule;
     }
 
     private String questionTranslationPrompt(JsonNode input) {
