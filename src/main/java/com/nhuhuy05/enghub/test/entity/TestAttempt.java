@@ -57,6 +57,9 @@ public class TestAttempt {
     @Column(name = "duration_seconds")
     Integer durationSeconds;
 
+    @Column(name = "selected_part_numbers", length = 50)
+    String selectedPartNumbers;
+
     @OneToMany(mappedBy = "attempt", fetch = FetchType.LAZY)
     Set<UserAnswer> answers;
 }

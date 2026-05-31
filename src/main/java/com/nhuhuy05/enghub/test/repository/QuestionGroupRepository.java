@@ -2,6 +2,7 @@ package com.nhuhuy05.enghub.test.repository;
 
 import com.nhuhuy05.enghub.test.entity.QuestionGroup;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -18,6 +19,15 @@ public interface QuestionGroupRepository extends JpaRepository<QuestionGroup, Lo
     List<QuestionGroup> findAllByTestPartTestId(Long testId);
 
     List<QuestionGroup> findAllByTestPartTestIdOrderByTestPartPartNumberAscOrderIndexAsc(Long testId);
+
+    @Query("""
+            select qg
+            from QuestionGroup qg
+            where qg.testPart.test.id = :testId
+              and qg.testPart.partNumber in :partNumbers
+            order by qg.testPart.partNumber asc, qg.orderIndex asc
+            """)
+    List<QuestionGroup> findAllByTestIdAndPartNumbersOrderByPartAndOrder(Long testId, List<Integer> partNumbers);
 
     long countByTestPartTestIdAndReviewStatusNot(Long testId, String reviewStatus);
 }

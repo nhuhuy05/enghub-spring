@@ -1131,6 +1131,100 @@ Nếu giáo viên thấy sai:
 Preview -> quay lại Review Groups -> sửa group -> Mark reviewed lại -> Preview lại
 ```
 
+## User Attempts
+
+Backend supports two learner modes:
+
+| Mode | UI behavior |
+| --- | --- |
+| `MOCK` | Exam mode. User must submit before viewing correct answers and explanations. |
+| `PRACTICE` | Practice mode. After saving an answer, backend returns correctness, correct answer id, and explanation for that question. |
+
+Start or resume an in-progress attempt:
+
+```http
+POST /enghub/attempts
+Content-Type: application/json
+```
+
+```json
+{
+  "testId": 1,
+  "mode": "MOCK",
+  "part_numbers": [1, 2, 3, 4, 5, 6, 7]
+}
+```
+
+`part_numbers` is optional. If omitted or empty, backend uses all 7 parts. User may choose one or multiple parts, for example `[1]`, `[5,6,7]`, or `[1,2,3,4]`.
+
+Load attempt metadata:
+
+```http
+GET /enghub/attempts/{attemptId}
+```
+
+Load content for doing the attempt:
+
+```http
+GET /enghub/attempts/{attemptId}/content
+```
+
+Content response is scoped to selected parts and does not include correct answer flags or explanations.
+
+Save or change an answer:
+
+```http
+POST /enghub/attempts/{attemptId}/answers
+Content-Type: application/json
+```
+
+```json
+{
+  "questionId": 101,
+  "selectedAnswerId": 505
+}
+```
+
+In `PRACTICE` mode, save answer response includes immediate feedback:
+
+```json
+{
+  "attemptId": 10,
+  "questionId": 101,
+  "selectedAnswerId": 505,
+  "correct": false,
+  "correct_answer_id": 506,
+  "explanation_vi": "..."
+}
+```
+
+In `MOCK` mode, save answer response does not include `correct`, `correct_answer_id`, or `explanation_vi`.
+
+Submit:
+
+```http
+POST /enghub/attempts/{attemptId}/submit
+```
+
+Backend calculates:
+
+- `correctCount`
+- `listeningScore`: correct count in Part 1-4
+- `readingScore`: correct count in Part 5-7
+- `totalScore`: total correct count
+- `durationSeconds`
+
+View result:
+
+```http
+GET /enghub/attempts/{attemptId}/result
+```
+
+Rules:
+
+- `MOCK`: result is available only after submit.
+- `PRACTICE`: answered questions can reveal correct answer and explanation while in progress; unanswered questions remain hidden until submit.
+
 ## 13. Publish
 
 ```http

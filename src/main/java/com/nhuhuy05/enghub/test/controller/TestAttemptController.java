@@ -1,7 +1,11 @@
 package com.nhuhuy05.enghub.test.controller;
 
 import com.nhuhuy05.enghub.common.response.ApiResponse;
+import com.nhuhuy05.enghub.common.enums.AttemptStatus;
+import com.nhuhuy05.enghub.test.dto.AttemptContentResponse;
 import com.nhuhuy05.enghub.test.dto.AttemptResponse;
+import com.nhuhuy05.enghub.test.dto.AttemptResultResponse;
+import com.nhuhuy05.enghub.test.dto.AttemptSummaryResponse;
 import com.nhuhuy05.enghub.test.dto.SaveAnswerRequest;
 import com.nhuhuy05.enghub.test.dto.StartAttemptRequest;
 import com.nhuhuy05.enghub.test.dto.UserAnswerResponse;
@@ -10,6 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +30,41 @@ public class TestAttemptController {
     ApiResponse<AttemptResponse> startAttempt(@RequestBody StartAttemptRequest request) {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         return ApiResponse.<AttemptResponse>builder()
-                .result(testAttemptService.startAttempt(userEmail, request.getTestId(), request.getMode()))
+                .result(testAttemptService.startAttempt(
+                        userEmail,
+                        request.getTestId(),
+                        request.getMode(),
+                        request.getPartNumbers()
+                ))
+                .build();
+    }
+
+    @GetMapping("/{attemptId}")
+    ApiResponse<AttemptResponse> getAttempt(@PathVariable Long attemptId) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ApiResponse.<AttemptResponse>builder()
+                .result(testAttemptService.getAttempt(userEmail, attemptId))
+                .build();
+    }
+
+    @GetMapping
+    ApiResponse<Page<AttemptSummaryResponse>> getAttempts(
+            @RequestParam(required = false) AttemptStatus status,
+            @RequestParam(required = false) Long testId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ApiResponse.<Page<AttemptSummaryResponse>>builder()
+                .result(testAttemptService.getAttempts(userEmail, status, testId, page, size))
+                .build();
+    }
+
+    @GetMapping("/{attemptId}/content")
+    ApiResponse<AttemptContentResponse> getAttemptContent(@PathVariable Long attemptId) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ApiResponse.<AttemptContentResponse>builder()
+                .result(testAttemptService.getAttemptContent(userEmail, attemptId))
                 .build();
     }
 
@@ -45,6 +84,14 @@ public class TestAttemptController {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         return ApiResponse.<AttemptResponse>builder()
                 .result(testAttemptService.submitAttempt(userEmail, attemptId))
+                .build();
+    }
+
+    @GetMapping("/{attemptId}/result")
+    ApiResponse<AttemptResultResponse> getAttemptResult(@PathVariable Long attemptId) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ApiResponse.<AttemptResultResponse>builder()
+                .result(testAttemptService.getAttemptResult(userEmail, attemptId))
                 .build();
     }
 }

@@ -38,6 +38,12 @@ public class SecurityConfig {
             "/auth/token",
             "/auth/introspect"
     };
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+            "/test-collections",
+            "/test-collections/*/tests",
+            "/tests",
+            "/tests/*"
+    };
     private static final String[] SWAGGER_ENDPOINTS = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -57,6 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         request -> request.requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder)
