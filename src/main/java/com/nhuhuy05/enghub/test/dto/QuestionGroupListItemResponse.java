@@ -28,4 +28,16 @@ public class QuestionGroupListItemResponse {
 
     @JsonProperty("missing_flags")
     List<String> missingFlags;
+
+    @JsonProperty("has_audio")
+    Boolean hasAudio;
+
+    @JsonProperty("audio_url")
+    String audioUrl;
+
+    @JsonProperty("transcript_line_count")
+    Long transcriptLineCount;
+
+    @JsonProperty("has_transcript_lines")
+    Boolean hasTranscriptLines;
 }

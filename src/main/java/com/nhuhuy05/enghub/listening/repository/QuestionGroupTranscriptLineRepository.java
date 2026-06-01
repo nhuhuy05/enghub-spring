@@ -9,4 +9,8 @@ public interface QuestionGroupTranscriptLineRepository extends JpaRepository<Que
     List<QuestionGroupTranscriptLine> findAllByQuestionGroupAudioIdOrderByOrderIndexAsc(Long audioId);
 
     boolean existsByQuestionGroupAudioId(Long audioId);
+
+    long countByQuestionGroupAudioId(Long audioId);
+
+    void deleteAllByQuestionGroupAudioId(Long audioId);
 }

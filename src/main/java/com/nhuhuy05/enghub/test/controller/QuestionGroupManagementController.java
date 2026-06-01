@@ -81,6 +81,18 @@ public class QuestionGroupManagementController {
                 .build();
     }
 
+    @PutMapping("/question-groups/{groupId}/transcript-lines")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<QuestionGroupDetailResponse> updateTranscriptLines(
+            @PathVariable Long groupId,
+            @RequestBody @Valid QuestionGroupTranscriptLinesUpdateRequest request
+    ) {
+        return ApiResponse.<QuestionGroupDetailResponse>builder()
+                .result(questionGroupReviewService.updateTranscriptLines(groupId, request))
+                .build();
+    }
+
     @PostMapping("/question-groups/{groupId}/generate-transcript")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))

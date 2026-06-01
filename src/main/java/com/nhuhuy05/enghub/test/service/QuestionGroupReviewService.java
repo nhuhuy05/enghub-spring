@@ -3,7 +3,9 @@ package com.nhuhuy05.enghub.test.service;
 import com.nhuhuy05.enghub.common.exception.AppException;
 import com.nhuhuy05.enghub.common.exception.ErrorCode;
 import com.nhuhuy05.enghub.listening.entity.QuestionGroupAudio;
+import com.nhuhuy05.enghub.listening.entity.QuestionGroupTranscriptLine;
 import com.nhuhuy05.enghub.listening.repository.QuestionGroupAudioRepository;
+import com.nhuhuy05.enghub.listening.repository.QuestionGroupTranscriptLineRepository;
 import com.nhuhuy05.enghub.media.entity.MediaAsset;
 import com.nhuhuy05.enghub.media.repository.MediaAssetRepository;
 import com.nhuhuy05.enghub.reading.entity.QuestionGroupPassage;
@@ -52,6 +54,7 @@ public class QuestionGroupReviewService {
     QuestionGroupRepository questionGroupRepository;
     QuestionGroupImageRepository questionGroupImageRepository;
     QuestionGroupAudioRepository questionGroupAudioRepository;
+    QuestionGroupTranscriptLineRepository questionGroupTranscriptLineRepository;
     QuestionGroupPassageRepository questionGroupPassageRepository;
     QuestionRepository questionRepository;
     AnswerRepository answerRepository;
@@ -64,6 +67,19 @@ public class QuestionGroupReviewService {
                 .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
 
         return questionGroupRepository.findAllByTestPartTestIdOrderByTestPartPartNumberAscOrderIndexAsc(testId).stream()
+                .map(this::toListItem)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestionGroupListItemResponse> getQuestionGroups(Long testId, Integer partNumber) {
+        testRepository.findById(testId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_EXISTED));
+        if (partNumber == null || partNumber < 1 || partNumber > 7) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        return questionGroupRepository.findAllByTestIdAndPartNumbersOrderByPartAndOrder(testId, List.of(partNumber)).stream()
                 .map(this::toListItem)
                 .toList();
     }
@@ -185,6 +201,33 @@ public class QuestionGroupReviewService {
     }
 
     @Transactional
+    public QuestionGroupDetailResponse updateTranscriptLines(Long groupId, QuestionGroupTranscriptLinesUpdateRequest request) {
+        QuestionGroup questionGroup = getGroup(groupId);
+        validateListeningPart(questionGroup);
+        QuestionGroupAudio audio = questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(groupId, 0)
+                .orElseThrow(() -> new AppException(ErrorCode.AI_AUDIO_NOT_EXISTED));
+
+        validateTranscriptLineRequest(request);
+        questionGroupTranscriptLineRepository.deleteAllByQuestionGroupAudioId(audio.getId());
+        questionGroupTranscriptLineRepository.flush();
+
+        for (QuestionGroupTranscriptLinesUpdateRequest.Line line : request.getLines()) {
+            questionGroupTranscriptLineRepository.save(QuestionGroupTranscriptLine.builder()
+                    .questionGroupAudio(audio)
+                    .speaker(blankToNull(line.getSpeaker()))
+                    .textEn(line.getTextEn().trim())
+                    .textVi(blankToNull(line.getTextVi()))
+                    .startMs(line.getStartMs())
+                    .endMs(line.getEndMs())
+                    .orderIndex(line.getOrderIndex())
+                    .build());
+        }
+
+        markNeedsReview(questionGroup);
+        return toDetail(questionGroup);
+    }
+
+    @Transactional
     public QuestionGroupDetailResponse updatePassages(Long groupId, QuestionGroupPassagesUpdateRequest request) {
         QuestionGroup questionGroup = getGroup(groupId);
         Long testId = questionGroup.getTestPart().getTest().getId();
@@ -257,6 +300,9 @@ public class QuestionGroupReviewService {
 
     private QuestionGroupListItemResponse toListItem(QuestionGroup group) {
         List<Question> questions = questionRepository.findAllByQuestionGroupIdOrderByQuestionNumberAsc(group.getId());
+        QuestionGroupAudio audio = questionGroupAudioRepository.findByQuestionGroupIdAndOrderIndex(group.getId(), 0)
+                .orElse(null);
+        long transcriptLineCount = audio == null ? 0 : questionGroupTranscriptLineRepository.countByQuestionGroupAudioId(audio.getId());
         return QuestionGroupListItemResponse.builder()
                 .id(group.getId())
                 .partNumber(group.getTestPart().getPartNumber())
@@ -264,6 +310,10 @@ public class QuestionGroupReviewService {
                 .questionNumbers(questions.stream().map(Question::getQuestionNumber).toList())
                 .reviewStatus(group.getReviewStatus())
                 .missingFlags(missingFlags(group, questions))
+                .hasAudio(audio != null)
+                .audioUrl(audio == null ? null : audio.getMediaAsset().getUrl())
+                .transcriptLineCount(transcriptLineCount)
+                .hasTranscriptLines(transcriptLineCount > 0)
                 .build();
     }
 
@@ -303,8 +353,27 @@ public class QuestionGroupReviewService {
                         .endMs(audio.getEndMs())
                         .transcriptEn(normalizeSpeakerLines(audio.getTranscriptEn()))
                         .transcriptVi(normalizeSpeakerLines(audio.getTranscriptVi()))
+                        .transcriptLines(groupTranscriptLines(audio.getId()))
                         .build())
                 .orElse(null);
+    }
+
+    private List<QuestionGroupTranscriptLineResponse> groupTranscriptLines(Long audioId) {
+        return questionGroupTranscriptLineRepository.findAllByQuestionGroupAudioIdOrderByOrderIndexAsc(audioId).stream()
+                .map(this::toTranscriptLineResponse)
+                .toList();
+    }
+
+    private QuestionGroupTranscriptLineResponse toTranscriptLineResponse(QuestionGroupTranscriptLine line) {
+        return QuestionGroupTranscriptLineResponse.builder()
+                .id(line.getId())
+                .speaker(line.getSpeaker())
+                .textEn(line.getTextEn())
+                .textVi(line.getTextVi())
+                .startMs(line.getStartMs())
+                .endMs(line.getEndMs())
+                .orderIndex(line.getOrderIndex())
+                .build();
     }
 
     private List<QuestionGroupDetailResponse.GroupPassageResponse> groupPassages(Long groupId) {
@@ -396,6 +465,57 @@ public class QuestionGroupReviewService {
         if (endMs != null && startMs != null && endMs <= startMs) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
+    }
+
+    private void validateListeningPart(QuestionGroup group) {
+        int part = group.getTestPart().getPartNumber();
+        if (part < 1 || part > 4) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+    }
+
+    private void validateTranscriptLineRequest(QuestionGroupTranscriptLinesUpdateRequest request) {
+        if (request == null || request.getLines() == null) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        Map<Integer, Long> orderCounts = request.getLines().stream()
+                .filter(line -> line != null && line.getOrderIndex() != null)
+                .collect(Collectors.groupingBy(
+                        QuestionGroupTranscriptLinesUpdateRequest.Line::getOrderIndex,
+                        Collectors.counting()
+                ));
+        if (orderCounts.values().stream().anyMatch(count -> count > 1)) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        for (QuestionGroupTranscriptLinesUpdateRequest.Line line : request.getLines()) {
+            if (line == null || isBlank(line.getTextEn()) || line.getOrderIndex() == null || line.getOrderIndex() < 0) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            if (line.getSpeaker() != null && line.getSpeaker().length() > 100) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            if (line.getStartMs() != null && line.getStartMs() < 0) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            if (line.getEndMs() != null && line.getEndMs() < 0) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            if (line.getStartMs() != null && line.getEndMs() != null && line.getEndMs() <= line.getStartMs()) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+        }
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private void markNeedsReview(QuestionGroup group) {

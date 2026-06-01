@@ -167,6 +167,18 @@ public class TestManagementController {
                 .build();
     }
 
+    @GetMapping("/{testId}/parts/{partNumber}/question-groups")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    ApiResponse<List<QuestionGroupListItemResponse>> getQuestionGroupsByPart(
+            @PathVariable Long testId,
+            @PathVariable Integer partNumber
+    ) {
+        return ApiResponse.<List<QuestionGroupListItemResponse>>builder()
+                .result(questionGroupReviewService.getQuestionGroups(testId, partNumber))
+                .build();
+    }
+
     @PatchMapping("/{testId}/publish")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))

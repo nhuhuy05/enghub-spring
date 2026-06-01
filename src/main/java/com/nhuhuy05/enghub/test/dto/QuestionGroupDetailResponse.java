@@ -71,6 +71,9 @@ public class QuestionGroupDetailResponse {
 
         @JsonProperty("transcript_vi")
         String transcriptVi;
+
+        @JsonProperty("transcript_lines")
+        List<QuestionGroupTranscriptLineResponse> transcriptLines;
     }
 
     @Data
