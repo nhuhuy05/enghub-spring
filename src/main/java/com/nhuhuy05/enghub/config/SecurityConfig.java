@@ -42,7 +42,9 @@ public class SecurityConfig {
             "/test-collections",
             "/test-collections/*/tests",
             "/tests",
-            "/tests/*"
+            "/tests/*",
+            "/reading-lessons",
+            "/reading-lessons/*"
     };
     private static final String[] SWAGGER_ENDPOINTS = {
             "/v3/api-docs/**",

@@ -71,6 +71,34 @@ public class GeminiClientService {
         return readJsonFromGeneratedText(generateContent(List.of(Map.of("text", vocabularyTranslationPrompt(input)))));
     }
 
+    public JsonNode generateReadingTranslation(JsonNode input) {
+        return readJsonFromGeneratedText(generateContent(List.of(Map.of("text", readingTranslationPrompt(input)))));
+    }
+
+    public JsonNode generateReadingTranslation(JsonNode input, List<MediaAsset> visualAssets) {
+        ensureEnabled();
+        List<UploadedFile> uploadedFiles = uploadVisualAssets(visualAssets);
+        try {
+            List<Map<String, Object>> parts = new ArrayList<>();
+            for (UploadedFile uploadedFile : uploadedFiles) {
+                parts.add(Map.of("file_data", Map.of(
+                        "mime_type", uploadedFile.mimeType(),
+                        "file_uri", uploadedFile.uri()
+                )));
+            }
+            parts.add(Map.of("text", readingTranslationPrompt(input)));
+            return readJsonFromGeneratedText(generateContent(parts));
+        } finally {
+            if (properties.isDeleteFileAfterUse()) {
+                uploadedFiles.forEach(file -> deleteFile(file.name()));
+            }
+        }
+    }
+
+    public JsonNode generateReadingVocabulary(JsonNode input) {
+        return readJsonFromGeneratedText(generateContent(List.of(Map.of("text", readingVocabularyPrompt(input)))));
+    }
+
     public JsonNode generateExplanations(JsonNode input, List<MediaAsset> visualAssets) {
         ensureEnabled();
         List<UploadedFile> uploadedFiles = uploadVisualAssets(visualAssets);
@@ -417,6 +445,63 @@ public class GeminiClientService {
                 {
                   "meaning_vi": "...",
                   "example_sentence_vi": "..."
+                }
+
+                Input JSON:
+                """ + input.toString();
+    }
+
+    private String readingTranslationPrompt(JsonNode input) {
+        return """
+                You are helping prepare TOEIC Part 7 bilingual reading practice for Vietnamese learners.
+
+                Translate the lesson title to Vietnamese as title_vi.
+                For each passage, return content_en and content_vi.
+                content_en should be the clean English passage text. If content_en is already provided, preserve its meaning and only clean obvious OCR/line-break issues.
+                Translate each passage from English to natural Vietnamese.
+                If passage images are attached, use them as source/context for the matching visual_asset_order in the input.
+                Preserve paragraph and line breaks where helpful for a side-by-side reading UI.
+                Do not translate field names, do not add explanations, and do not invent missing content.
+                If content_en is blank but a passage image is provided, extract visible English passage text into content_en and translate it into content_vi.
+                If both content_en and passage image are missing, return a blank content_vi for that passage.
+
+                Return JSON only in this exact shape:
+                {
+                  "title_vi": "...",
+                  "passages": [
+                    {
+                      "passage_id": 1,
+                      "content_en": "...",
+                      "content_vi": "..."
+                    }
+                  ]
+                }
+
+                Input JSON:
+                """ + input.toString();
+    }
+
+    private String readingVocabularyPrompt(JsonNode input) {
+        return """
+                You are helping build a TOEIC Part 7 vocabulary hint list for Vietnamese learners.
+
+                Select 5 to 12 useful words or phrases from the passages.
+                Prefer business, workplace, travel, notices, scheduling, and email vocabulary.
+                Avoid very basic words unless they are part of an important phrase.
+                Use concise Vietnamese meanings.
+                Include passage_id when the word clearly comes from a passage.
+                part_of_speech should be concise, such as noun, verb, adjective, adverb, phrase, phrasal verb.
+
+                Return JSON only in this exact shape:
+                {
+                  "vocabulary_hints": [
+                    {
+                      "passage_id": 1,
+                      "word": "announce",
+                      "part_of_speech": "verb",
+                      "meaning_vi": "thông báo"
+                    }
+                  ]
                 }
 
                 Input JSON:

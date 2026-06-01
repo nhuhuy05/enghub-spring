@@ -49,6 +49,8 @@ public enum ErrorCode {
     VOCABULARY_TOPIC_NOT_EXISTED(1040, "Vocabulary topic not existed", HttpStatus.NOT_FOUND),
     VOCABULARY_TOPIC_EXISTED(1041, "Vocabulary topic existed", HttpStatus.BAD_REQUEST),
     VOCABULARY_PROGRESS_NOT_EXISTED(1042, "Vocabulary progress not existed", HttpStatus.NOT_FOUND),
+    READING_LESSON_NOT_EXISTED(1043, "Reading lesson not existed", HttpStatus.NOT_FOUND),
+    READING_LESSON_EXISTED(1044, "Reading lesson existed", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

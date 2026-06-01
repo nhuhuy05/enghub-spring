@@ -41,6 +41,12 @@ public class PassageResponse {
     @JsonProperty("media_asset_id")
     Long mediaAssetId;
 
+    @JsonProperty("media_label")
+    String mediaLabel;
+
+    @JsonProperty("media_url")
+    String mediaUrl;
+
     @JsonProperty("order_index")
     Integer orderIndex;
 }

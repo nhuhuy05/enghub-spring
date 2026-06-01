@@ -91,6 +91,8 @@ public class PassageService {
                 .contentVi(passage.getContentVi())
                 .vocabHints(passage.getVocabHints())
                 .mediaAssetId(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getId())
+                .mediaLabel(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getLabel())
+                .mediaUrl(passage.getMediaAsset() == null ? null : passage.getMediaAsset().getUrl())
                 .orderIndex(passage.getOrderIndex())
                 .build();
     }

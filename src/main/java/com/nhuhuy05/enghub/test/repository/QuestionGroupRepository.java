@@ -29,5 +29,14 @@ public interface QuestionGroupRepository extends JpaRepository<QuestionGroup, Lo
             """)
     List<QuestionGroup> findAllByTestIdAndPartNumbersOrderByPartAndOrder(Long testId, List<Integer> partNumbers);
 
+    @Query("""
+            select qg
+            from QuestionGroup qg
+            where qg.testPart.partNumber = 7
+              and (:testId is null or qg.testPart.test.id = :testId)
+            order by qg.testPart.test.createdAt desc, qg.orderIndex asc
+            """)
+    List<QuestionGroup> findAllPart7Candidates(Long testId);
+
     long countByTestPartTestIdAndReviewStatusNot(Long testId, String reviewStatus);
 }
