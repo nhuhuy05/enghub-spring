@@ -35,6 +35,9 @@ public class UserVocabularyProgress {
     @Column(nullable = false)
     Integer level;
 
+    @Column(name = "learned_at", nullable = false)
+    LocalDateTime learnedAt;
+
     @Column(name = "next_review_at")
     LocalDateTime nextReviewAt;
 
@@ -44,9 +47,15 @@ public class UserVocabularyProgress {
     @Column(name = "review_count", nullable = false)
     Integer reviewCount;
 
+    @Column(name = "correct_count", nullable = false)
+    Integer correctCount;
+
     @Column(name = "interval_days", nullable = false)
     Integer intervalDays;
 
     @Column(name = "ease_factor", nullable = false, precision = 4, scale = 2)
     BigDecimal easeFactor;
+
+    @Column(nullable = false)
+    boolean mastered;
 }

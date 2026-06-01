@@ -67,6 +67,10 @@ public class GeminiClientService {
         return readJsonFromGeneratedText(generateContent(List.of(Map.of("text", explanationPrompt(input)))));
     }
 
+    public JsonNode translateVocabulary(JsonNode input) {
+        return readJsonFromGeneratedText(generateContent(List.of(Map.of("text", vocabularyTranslationPrompt(input)))));
+    }
+
     public JsonNode generateExplanations(JsonNode input, List<MediaAsset> visualAssets) {
         ensureEnabled();
         List<UploadedFile> uploadedFiles = uploadVisualAssets(visualAssets);
@@ -394,6 +398,25 @@ public class GeminiClientService {
                       "explanation_vi": "..."
                     }
                   ]
+                }
+
+                Input JSON:
+                """ + input.toString();
+    }
+
+    private String vocabularyTranslationPrompt(JsonNode input) {
+        return """
+                You are helping build a TOEIC vocabulary list for Vietnamese learners.
+
+                Translate the vocabulary meaning and example sentence into natural Vietnamese.
+                Keep the translation concise and suitable for a learner dictionary.
+                Do not invent a new English example.
+                If example_sentence_en is blank, return a blank example_sentence_vi.
+
+                Return JSON only in this exact shape:
+                {
+                  "meaning_vi": "...",
+                  "example_sentence_vi": "..."
                 }
 
                 Input JSON:

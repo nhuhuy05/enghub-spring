@@ -44,6 +44,11 @@ public enum ErrorCode {
     AUDIO_DOWNLOAD_FAILED(1035, "Audio download failed", HttpStatus.BAD_REQUEST),
     VISUAL_DOWNLOAD_FAILED(1036, "Visual media download failed", HttpStatus.BAD_REQUEST),
     AI_MISSING_REQUIRED_CONTEXT(1037, "AI generation is missing required context", HttpStatus.BAD_REQUEST),
+    VOCABULARY_NOT_EXISTED(1038, "Vocabulary not existed", HttpStatus.NOT_FOUND),
+    VOCABULARY_EXISTED(1039, "Vocabulary existed", HttpStatus.BAD_REQUEST),
+    VOCABULARY_TOPIC_NOT_EXISTED(1040, "Vocabulary topic not existed", HttpStatus.NOT_FOUND),
+    VOCABULARY_TOPIC_EXISTED(1041, "Vocabulary topic existed", HttpStatus.BAD_REQUEST),
+    VOCABULARY_PROGRESS_NOT_EXISTED(1042, "Vocabulary progress not existed", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

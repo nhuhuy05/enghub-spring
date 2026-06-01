@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
@@ -21,5 +23,10 @@ public class VocabularyTopic {
     String name;
 
     String description;
-}
 
+    @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
+    LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false, insertable = false)
+    LocalDateTime updatedAt;
+}
