@@ -6,17 +6,21 @@ import com.nhuhuy05.enghub.test.dto.AttemptContentResponse;
 import com.nhuhuy05.enghub.test.dto.AttemptResponse;
 import com.nhuhuy05.enghub.test.dto.AttemptResultResponse;
 import com.nhuhuy05.enghub.test.dto.AttemptSummaryResponse;
+import com.nhuhuy05.enghub.test.dto.QuestionChatRequest;
 import com.nhuhuy05.enghub.test.dto.SaveAnswerRequest;
 import com.nhuhuy05.enghub.test.dto.StartAttemptRequest;
 import com.nhuhuy05.enghub.test.dto.UserAnswerResponse;
+import com.nhuhuy05.enghub.test.service.QuestionChatService;
 import com.nhuhuy05.enghub.test.service.TestAttemptService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/attempts")
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TestAttemptController {
     TestAttemptService testAttemptService;
+    QuestionChatService questionChatService;
 
     @PostMapping
     ApiResponse<AttemptResponse> startAttempt(@RequestBody StartAttemptRequest request) {
@@ -93,5 +98,18 @@ public class TestAttemptController {
         return ApiResponse.<AttemptResultResponse>builder()
                 .result(testAttemptService.getAttemptResult(userEmail, attemptId))
                 .build();
+    }
+
+    @PostMapping(
+            value = "/{attemptId}/questions/{questionId}/chat/stream",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE
+    )
+    SseEmitter streamQuestionChat(
+            @PathVariable Long attemptId,
+            @PathVariable Long questionId,
+            @RequestBody QuestionChatRequest request
+    ) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return questionChatService.stream(userEmail, attemptId, questionId, request);
     }
 }
