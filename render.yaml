@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: enghub-spring
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /enghub/actuator/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: enghub-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: enghub-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: enghub-db
+          property: password
+      - key: JWT_SIGNER_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER_ROOT
+        value: enghub
+      - key: CLOUDINARY_FOLDER_ENV
+        value: prod
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_ENABLED
+        value: "true"
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite
+      - key: SPRING_JPA_SHOW_SQL
+        value: "false"
+
+databases:
+  - name: enghub-db
+    databaseName: enghub
+    user: enghub
+    plan: free
+    region: singapore
+    postgresMajorVersion: "17"

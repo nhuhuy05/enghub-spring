@@ -51,6 +51,10 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html"
     };
+    private static final String[] ACTUATOR_ENDPOINTS = {
+            "/actuator/health",
+            "/actuator/health/**"
+    };
     @Value("${jwt.signerKey}")
     private String signerKey;
 
@@ -64,6 +68,7 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(
                         request -> request.requestMatchers(SWAGGER_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, ACTUATOR_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .anyRequest().authenticated());
