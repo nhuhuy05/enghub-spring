@@ -109,7 +109,7 @@ public class SecurityConfig {
 
     @Bean
     JwtDecoder jwtDecoder(InvalidatedTokenRepository invalidatedTokenRepository) {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(JwtKeyFactory.hs512Key(signerKey), "HS512");
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder
                 .withSecretKey(secretKeySpec)
                 .macAlgorithm(MacAlgorithm.HS512)

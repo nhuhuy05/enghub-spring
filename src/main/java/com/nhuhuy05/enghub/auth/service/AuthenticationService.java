@@ -7,6 +7,7 @@ import com.nhuhuy05.enghub.auth.dto.IntrospectResponse;
 import com.nhuhuy05.enghub.auth.dto.LogoutRequest;
 import com.nhuhuy05.enghub.auth.entity.InvalidatedToken;
 import com.nhuhuy05.enghub.auth.repository.InvalidatedTokenRepository;
+import com.nhuhuy05.enghub.config.JwtKeyFactory;
 import com.nhuhuy05.enghub.user.entity.User;
 import com.nhuhuy05.enghub.common.exception.AppException;
 import com.nhuhuy05.enghub.common.exception.ErrorCode;
@@ -118,7 +119,7 @@ public class AuthenticationService {
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(JwtKeyFactory.hs512Key(SIGNER_KEY)));
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("Cannot create token", e);
@@ -141,7 +142,7 @@ public class AuthenticationService {
     }
 
     public SignedJWT verifyToken(String token) throws ParseException, JOSEException {
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        JWSVerifier verifier = new MACVerifier(JwtKeyFactory.hs512Key(SIGNER_KEY));
         SignedJWT signedJWT = SignedJWT.parse(token);
 
         Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
@@ -154,6 +155,5 @@ public class AuthenticationService {
     }
 
 }
-
 
 
