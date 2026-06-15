@@ -27,7 +27,7 @@ public class AdminVocabularyController {
     VocabularyEnrichmentService vocabularyEnrichmentService;
 
     @PostMapping("/topics")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyTopicResponse> createTopic(@RequestBody @Valid VocabularyTopicRequest request) {
         return ApiResponse.<VocabularyTopicResponse>builder()
@@ -36,7 +36,7 @@ public class AdminVocabularyController {
     }
 
     @GetMapping("/topics")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<VocabularyTopicResponse>> getTopics() {
         return ApiResponse.<List<VocabularyTopicResponse>>builder()
@@ -45,7 +45,7 @@ public class AdminVocabularyController {
     }
 
     @PutMapping("/topics/{topicId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyTopicResponse> updateTopic(
             @PathVariable Long topicId,
@@ -57,7 +57,7 @@ public class AdminVocabularyController {
     }
 
     @DeleteMapping("/topics/{topicId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<String> deleteTopic(@PathVariable Long topicId) {
         vocabularyService.deleteTopic(topicId);
@@ -67,7 +67,7 @@ public class AdminVocabularyController {
     }
 
     @GetMapping("/lookup")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyLookupResponse> lookup(@RequestParam String word) {
         return ApiResponse.<VocabularyLookupResponse>builder()
@@ -76,7 +76,7 @@ public class AdminVocabularyController {
     }
 
     @PostMapping("/topics/{topicId}/import")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyImportResponse> importToTopic(
             @PathVariable Long topicId,
@@ -89,7 +89,7 @@ public class AdminVocabularyController {
     }
 
     @PostMapping("/topics/{topicId}/enrich")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyEnrichResponse> enrichTopic(
             @PathVariable Long topicId,
@@ -101,7 +101,7 @@ public class AdminVocabularyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyResponse> createVocabulary(@RequestBody @Valid VocabularyRequest request) {
         return ApiResponse.<VocabularyResponse>builder()
@@ -110,7 +110,7 @@ public class AdminVocabularyController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<VocabularyResponse>> searchVocabulary(
             @RequestParam(required = false) Long topicId,
@@ -122,7 +122,7 @@ public class AdminVocabularyController {
     }
 
     @GetMapping("/{vocabularyId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyResponse> getVocabulary(@PathVariable Long vocabularyId) {
         return ApiResponse.<VocabularyResponse>builder()
@@ -131,7 +131,7 @@ public class AdminVocabularyController {
     }
 
     @PutMapping("/{vocabularyId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyResponse> updateVocabulary(
             @PathVariable Long vocabularyId,
@@ -143,7 +143,7 @@ public class AdminVocabularyController {
     }
 
     @DeleteMapping("/{vocabularyId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<String> deleteVocabulary(@PathVariable Long vocabularyId) {
         vocabularyService.deleteVocabulary(vocabularyId);
@@ -153,7 +153,7 @@ public class AdminVocabularyController {
     }
 
     @PostMapping("/{vocabularyId}/enrich")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyEnrichResponse> enrichVocabulary(
             @PathVariable Long vocabularyId,
@@ -165,7 +165,7 @@ public class AdminVocabularyController {
     }
 
     @PostMapping("/{vocabularyId}/topics/{topicId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyResponse> attachTopic(@PathVariable Long vocabularyId, @PathVariable Long topicId) {
         return ApiResponse.<VocabularyResponse>builder()
@@ -174,7 +174,7 @@ public class AdminVocabularyController {
     }
 
     @DeleteMapping("/{vocabularyId}/topics/{topicId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<VocabularyResponse> detachTopic(@PathVariable Long vocabularyId, @PathVariable Long topicId) {
         return ApiResponse.<VocabularyResponse>builder()

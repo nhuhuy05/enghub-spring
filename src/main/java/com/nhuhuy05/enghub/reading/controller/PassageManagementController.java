@@ -22,7 +22,7 @@ public class PassageManagementController {
     PassageService passageService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<PassageResponse> createPassage(@RequestBody @Valid PassageRequest request) {
         return ApiResponse.<PassageResponse>builder()
@@ -31,7 +31,7 @@ public class PassageManagementController {
     }
 
     @PatchMapping("/{passageId}/media")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<PassageResponse> updatePassageMedia(
             @PathVariable Long passageId,

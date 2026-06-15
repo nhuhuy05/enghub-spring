@@ -1,4 +1,4 @@
-# EngHub Spring Boot
+﻿# EngHub Spring Boot
 
 EngHub is a Spring Boot backend for an English learning platform focused on TOEIC practice, bilingual reading, listening dictation, vocabulary review, and AI-assisted content preparation. The application exposes REST APIs secured by JWT, stores data in PostgreSQL, manages schema evolution with Flyway, uploads media to Cloudinary, and integrates with Gemini for transcript, translation, explanation, vocabulary, and practice-chat workflows.
 
@@ -22,7 +22,7 @@ EngHub is a Spring Boot backend for an English learning platform focused on TOEI
 ## Features
 
 - JWT authentication with logout token invalidation.
-- Role and permission based authorization for admin, teacher, and student workflows.
+- Role and permission based authorization for admin and student workflows.
 - TOEIC test collection management with seven default parts.
 - Excel import for TOEIC questions, answers, media mapping, transcripts, and review workflow.
 - Published test catalog for learners.

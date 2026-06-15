@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class AdminUserService {
     private static final int MAX_PAGE_SIZE = 100;
+    private static final Set<String> ALLOWED_ROLE_NAMES = Set.of(SystemRole.ADMIN.name(), SystemRole.STUDENT.name());
 
     UserRepository userRepository;
     RoleRepository roleRepository;
@@ -192,6 +193,9 @@ public class AdminUserService {
                 .map(this::normalizeRoleName)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         if (normalizedRoleNames.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        if (!ALLOWED_ROLE_NAMES.containsAll(normalizedRoleNames)) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 

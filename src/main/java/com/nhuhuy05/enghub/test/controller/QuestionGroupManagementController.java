@@ -24,7 +24,7 @@ public class QuestionGroupManagementController {
     QuestionGroupAiService questionGroupAiService;
 
     @GetMapping("/question-groups/{groupId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> getQuestionGroup(@PathVariable Long groupId) {
         return ApiResponse.<QuestionGroupDetailResponse>builder()
@@ -33,7 +33,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/question-groups/{groupId}/review-status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateReviewStatus(
             @PathVariable Long groupId,
@@ -46,7 +46,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/question-groups/{groupId}/images")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateImages(
             @PathVariable Long groupId,
@@ -58,7 +58,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/question-groups/{groupId}/audio")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateAudio(
             @PathVariable Long groupId,
@@ -70,7 +70,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/question-groups/{groupId}/transcript")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateTranscript(
             @PathVariable Long groupId,
@@ -82,7 +82,7 @@ public class QuestionGroupManagementController {
     }
 
     @PutMapping("/question-groups/{groupId}/transcript-lines")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateTranscriptLines(
             @PathVariable Long groupId,
@@ -94,7 +94,7 @@ public class QuestionGroupManagementController {
     }
 
     @PostMapping("/question-groups/{groupId}/generate-transcript")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> generateTranscript(@PathVariable Long groupId) {
         return ApiResponse.<QuestionGroupDetailResponse>builder()
@@ -103,7 +103,7 @@ public class QuestionGroupManagementController {
     }
 
     @PostMapping("/question-groups/{groupId}/generate-question-translation")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> generateQuestionTranslation(@PathVariable Long groupId) {
         return ApiResponse.<QuestionGroupDetailResponse>builder()
@@ -112,7 +112,7 @@ public class QuestionGroupManagementController {
     }
 
     @PostMapping("/question-groups/{groupId}/generate-explanations")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> generateExplanations(@PathVariable Long groupId) {
         return ApiResponse.<QuestionGroupDetailResponse>builder()
@@ -121,7 +121,7 @@ public class QuestionGroupManagementController {
     }
 
     @PostMapping("/question-groups/{groupId}/generate-ai-support")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> generateAiSupport(
             @PathVariable Long groupId,
@@ -133,7 +133,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/question-groups/{groupId}/passages")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updatePassages(
             @PathVariable Long groupId,
@@ -145,7 +145,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/questions/{questionId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateQuestion(
             @PathVariable Long questionId,
@@ -157,7 +157,7 @@ public class QuestionGroupManagementController {
     }
 
     @PatchMapping("/answers/{answerId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<QuestionGroupDetailResponse> updateAnswer(
             @PathVariable Long answerId,

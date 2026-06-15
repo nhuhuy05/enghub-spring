@@ -23,8 +23,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,8 @@ import java.util.Set;
 @Slf4j
 @Transactional(readOnly = true)
 public class UserService {
+    private static final Set<String> ALLOWED_ROLE_NAMES = Set.of(SystemRole.ADMIN.name(), SystemRole.STUDENT.name());
+
     UserRepository userRepository;
     RoleRepository roleRepository;
     UserMapper userMapper;
@@ -79,8 +84,17 @@ public class UserService {
         }
 
         if (request.getRoles() != null) {
-            Set<String> roleNames = new HashSet<>(request.getRoles());
+            Set<String> roleNames = request.getRoles().stream()
+                    .filter(role -> role != null && !role.isBlank())
+                    .map(this::normalizeRoleName)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (roleNames.isEmpty() || !ALLOWED_ROLE_NAMES.containsAll(roleNames)) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
             var roles = roleRepository.findByNameIn(roleNames);
+            if (roles.size() != roleNames.size()) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
             user.setRoles(new HashSet<>(roles));
         }
 
@@ -113,6 +127,14 @@ public class UserService {
                                 .description(roleName.name())
                                 .build()
                 ));
+    }
+
+    private String normalizeRoleName(String role) {
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring("ROLE_".length());
+        }
+        return normalized;
     }
 
 }

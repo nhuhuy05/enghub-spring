@@ -41,7 +41,7 @@ public class TestManagementController {
     MediaAssetService mediaAssetService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestResponse> createTest(@RequestBody @Valid TestCreationRequest request) {
         return ApiResponse.<TestResponse>builder()
@@ -50,7 +50,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestResponse> getTestById(@PathVariable Long testId) {
         return ApiResponse.<TestResponse>builder()
@@ -59,7 +59,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}/media")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<MediaAssetResponse>> getMedia(@PathVariable Long testId) {
         return ApiResponse.<List<MediaAssetResponse>>builder()
@@ -68,7 +68,7 @@ public class TestManagementController {
     }
 
     @PostMapping("/{testId}/parts/init")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<TestPartResponse>> initDefaultParts(@PathVariable Long testId) {
         return ApiResponse.<List<TestPartResponse>>builder()
@@ -77,7 +77,7 @@ public class TestManagementController {
     }
 
     @PostMapping("/{testId}/media")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<MediaAssetResponse> uploadMedia(
             @PathVariable Long testId,
@@ -93,7 +93,7 @@ public class TestManagementController {
     }
 
     @PutMapping("/{testId}/media/{mediaAssetId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<MediaAssetResponse> replaceMedia(
             @PathVariable Long testId,
@@ -106,7 +106,7 @@ public class TestManagementController {
     }
 
     @DeleteMapping("/{testId}/media/{mediaAssetId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<String> deleteMedia(@PathVariable Long testId, @PathVariable Long mediaAssetId) {
         mediaAssetService.deleteMedia(testId, mediaAssetId);
@@ -116,7 +116,7 @@ public class TestManagementController {
     }
 
     @PostMapping("/{testId}/import")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestImportResponse> importQuestions(
             @PathVariable Long testId,
@@ -129,7 +129,7 @@ public class TestManagementController {
     }
 
     @PatchMapping("/{testId}/audio-ranges")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<AudioRangeResponse>> updateAudioRanges(
             @PathVariable Long testId,
@@ -141,7 +141,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}/preview")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestPreviewResponse> preview(@PathVariable Long testId) {
         return ApiResponse.<TestPreviewResponse>builder()
@@ -150,7 +150,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}/preview-content")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestPreviewContentResponse> previewContent(@PathVariable Long testId) {
         return ApiResponse.<TestPreviewContentResponse>builder()
@@ -159,7 +159,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}/question-groups")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<QuestionGroupListItemResponse>> getQuestionGroups(@PathVariable Long testId) {
         return ApiResponse.<List<QuestionGroupListItemResponse>>builder()
@@ -168,7 +168,7 @@ public class TestManagementController {
     }
 
     @GetMapping("/{testId}/parts/{partNumber}/question-groups")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<QuestionGroupListItemResponse>> getQuestionGroupsByPart(
             @PathVariable Long testId,
@@ -180,7 +180,7 @@ public class TestManagementController {
     }
 
     @PatchMapping("/{testId}/publish")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<PublishResponse> publish(@PathVariable Long testId) {
         return ApiResponse.<PublishResponse>builder()
@@ -189,7 +189,7 @@ public class TestManagementController {
     }
 
     @PatchMapping("/{testId}/unpublish")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<PublishResponse> unpublish(@PathVariable Long testId) {
         return ApiResponse.<PublishResponse>builder()

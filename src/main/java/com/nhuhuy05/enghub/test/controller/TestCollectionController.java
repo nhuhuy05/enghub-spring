@@ -24,7 +24,7 @@ public class TestCollectionController {
     TestManagementService testManagementService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<TestCollectionResponse> createCollection(@RequestBody @Valid TestCollectionRequest request) {
         return ApiResponse.<TestCollectionResponse>builder()

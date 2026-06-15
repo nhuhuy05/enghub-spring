@@ -24,7 +24,7 @@ public class AdminReadingLessonController {
     ReadingLessonService readingLessonService;
 
     @GetMapping("/part7-candidates")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<ReadingPart7CandidateResponse>> getPart7Candidates(
             @RequestParam(name = "test_id", required = false) Long testId
@@ -35,7 +35,7 @@ public class AdminReadingLessonController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<List<ReadingLessonListItemResponse>> getLessons(
             @RequestParam(name = "status", required = false) ReadingLessonStatus status,
@@ -47,7 +47,7 @@ public class AdminReadingLessonController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> createLesson(@RequestBody @Valid ReadingLessonCreateRequest request) {
         return ApiResponse.<ReadingLessonResponse>builder()
@@ -56,7 +56,7 @@ public class AdminReadingLessonController {
     }
 
     @GetMapping("/{lessonId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> getLesson(@PathVariable Long lessonId) {
         return ApiResponse.<ReadingLessonResponse>builder()
@@ -65,7 +65,7 @@ public class AdminReadingLessonController {
     }
 
     @PutMapping("/{lessonId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> updateLesson(
             @PathVariable Long lessonId,
@@ -77,7 +77,7 @@ public class AdminReadingLessonController {
     }
 
     @PatchMapping("/{lessonId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> patchLesson(
             @PathVariable Long lessonId,
@@ -89,7 +89,7 @@ public class AdminReadingLessonController {
     }
 
     @PatchMapping("/{lessonId}/status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> updateStatus(
             @PathVariable Long lessonId,
@@ -101,7 +101,7 @@ public class AdminReadingLessonController {
     }
 
     @PostMapping("/{lessonId}/generate-translation")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> generateTranslation(
             @PathVariable Long lessonId,
@@ -113,7 +113,7 @@ public class AdminReadingLessonController {
     }
 
     @PostMapping("/{lessonId}/generate-vocabulary")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> generateVocabulary(
             @PathVariable Long lessonId,
@@ -125,7 +125,7 @@ public class AdminReadingLessonController {
     }
 
     @PostMapping("/{lessonId}/generate-ai-support")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<ReadingLessonResponse> generateAiSupport(
             @PathVariable Long lessonId,
@@ -137,7 +137,7 @@ public class AdminReadingLessonController {
     }
 
     @DeleteMapping("/{lessonId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     ApiResponse<String> deleteLesson(@PathVariable Long lessonId) {
         readingLessonService.deleteLesson(lessonId);
